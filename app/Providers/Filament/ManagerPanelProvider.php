@@ -25,6 +25,7 @@ class ManagerPanelProvider extends PanelProvider
         return $panel
             ->id('manager')
             ->path('manager')
+            ->login()
             ->colors([
                 'primary' => Color::Amber,
             ])

@@ -26,4 +26,6 @@ class Conta extends Model
     public function Banco() {
         return $this->belongsTo(Banco::class);
     }
+
+    
 }

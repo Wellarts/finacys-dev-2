@@ -19,11 +19,16 @@ class Team extends Model
 
     }
 
-    
 
     public function Conta() {
 
         return $this->belongsToMany(Conta::class);
+
+    }
+
+    public function Categoria() {
+
+        return $this->belongsToMany(Categoria::class);
 
     }
 }
