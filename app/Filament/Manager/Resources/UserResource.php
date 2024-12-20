@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Filament\Resources;
+namespace App\Filament\Manager\Resources;
 
-use App\Filament\Resources\ContaResource\Pages;
-use App\Filament\Resources\ContaResource\RelationManagers;
-use App\Models\Conta;
+use App\Filament\Manager\Resources\UserResource\Pages;
+use App\Filament\Manager\Resources\UserResource\RelationManagers;
+use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -13,9 +13,9 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class ContaResource extends Resource
+class UserResource extends Resource
 {
-    protected static ?string $model = Conta::class;
+    protected static ?string $model = User::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
@@ -23,25 +23,23 @@ class ContaResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Select::make('banco_id')
-                    ->label('Banco')
-                    ->searchable()
-                    ->relationship('banco', 'nome'),
-                Forms\Components\TextInput::make('tipo')
+                Forms\Components\TextInput::make('name')
                     ->required()
                     ->maxLength(255),
-                Forms\Components\TextInput::make('agencia')
+                Forms\Components\TextInput::make('email')
+                    ->email()
                     ->required()
                     ->maxLength(255),
-                Forms\Components\TextInput::make('conta')
+                Forms\Components\DateTimePicker::make('email_verified_at'),
+                Forms\Components\TextInput::make('password')
+                    ->password()
                     ->required()
                     ->maxLength(255),
-                Forms\Components\TextInput::make('descricao')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('saldo')
-                    ->required()
-                    ->numeric(),
+                Forms\Components\Select::make('teams')
+                    ->label('Cliente')
+                    ->multiple()
+                    ->preload()
+                    ->relationship('team', 'name'),
             ]);
     }
 
@@ -49,19 +47,12 @@ class ContaResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('banco.nome')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('tipo')
+                Tables\Columns\TextColumn::make('name')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('agencia')
+                Tables\Columns\TextColumn::make('email')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('conta')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('descricao')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('saldo')
-                    ->numeric()
+                Tables\Columns\TextColumn::make('email_verified_at')
+                    ->dateTime()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
@@ -89,7 +80,7 @@ class ContaResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ManageContas::route('/'),
+            'index' => Pages\ManageUsers::route('/'),
         ];
     }
 }

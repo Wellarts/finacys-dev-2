@@ -12,14 +12,25 @@ class Categoria extends Model
     protected $fillable = [
         'nome',
         'cor',
+        'team_id',
     ];
 
-    public function Conta() {
-        return $this->belongsToMany(Team::class);
+    
+
+    public function team() {
+        return $this->belongsTo(Team::class);
+    }
+        
+    public function conta() {
+        return $this->belongsTo(Conta::class);
     }
 
-    public function Team() {
-        return $this->belongsToMany(Team::class);
+    public function despesa() {
+        return $this->belongsTo(Despesa::class);
+    }
+
+    public function subCategoria() {
+        return $this->belongsTo(SubCategoria::class);
     }
 
 }

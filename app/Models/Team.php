@@ -20,15 +20,27 @@ class Team extends Model
     }
 
 
-    public function Conta() {
+    public function contas() {
 
-        return $this->belongsToMany(Conta::class);
+        return $this->HasMany(Conta::class);
 
     }
 
-    public function Categoria() {
+    public function categorias() {
 
-        return $this->belongsToMany(Categoria::class);
+        return $this->HasMany(Categoria::class);
+
+    }
+
+    public function despesas() {
+
+        return $this->HasMany(Despesa::class);
+
+    }
+
+    public function subCategorias() {
+
+        return $this->HasMany(SubCategoria::class);
 
     }
 }

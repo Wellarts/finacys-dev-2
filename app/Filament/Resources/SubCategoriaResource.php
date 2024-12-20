@@ -2,9 +2,9 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\CategoriaResource\Pages;
-use App\Filament\Resources\CategoriaResource\RelationManagers;
-use App\Models\Categoria;
+use App\Filament\Resources\SubCategoriaResource\Pages;
+use App\Filament\Resources\SubCategoriaResource\RelationManagers;
+use App\Models\SubCategoria;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -12,28 +12,33 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Facades\Filament;
 
-class CategoriaResource extends Resource
+class SubCategoriaResource extends Resource
 {
-    protected static ?string $model = Categoria::class;
+    protected static ?string $model = SubCategoria::class;
 
     protected static ?string $navigationIcon = 'heroicon-s-rectangle-group';
 
-    protected static ?string $navigationLabel = 'Categorias';
+    protected static ?string $navigationLabel = 'SubCategorias';
 
     protected static ?string $navigationGroup = 'Cadastros';
 
-    
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('nome')
+                Forms\Components\Select::make('categoria_id')
                     ->required()
-                    ->maxLength(255),
-                Forms\Components\ColorPicker::make('cor'),
-
-
+                    ->relationship(
+                        name: 'categoria',
+                        titleAttribute: 'nome',
+                        modifyQueryUsing: fn(Builder $query) => $query->whereBelongsTo(Filament::getTenant()),
+                    ),
+                Forms\Components\TextInput::make('nome')
+                    ->label('SubCategoria')
+                    ->required(),
+                    
             ]);
     }
 
@@ -41,18 +46,12 @@ class CategoriaResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('categoria.nome')
+                    ->numeric()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('nome')
+                    ->label('SubCategoria')
                     ->searchable(),
-                Tables\Columns\ColorColumn::make('cor'),
-                    
-                Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 //
@@ -71,7 +70,7 @@ class CategoriaResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ManageCategorias::route('/'),
+            'index' => Pages\ManageSubCategorias::route('/'),
         ];
     }
 }

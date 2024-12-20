@@ -17,10 +17,11 @@ class Conta extends Model
             'conta',
             'descricao',
             'saldo',
+            'team_id',
     ];
 
-    public function Team() {
-        return $this->belongsToMany(Team::class);
+    public function team() {
+        return $this->belongsTo(Team::class);
     }
 
     public function Banco() {

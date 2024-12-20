@@ -14,7 +14,7 @@ class Banco extends Model
     ];
 
     
-    public function Conta() {
-        return $this->belongsToMany(Team::class);
+    public function conta() {
+        return $this->HasMany(Conta::class);
     }
 }

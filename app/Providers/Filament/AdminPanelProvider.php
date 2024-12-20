@@ -57,9 +57,9 @@ class AdminPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ])
-            ->tenant(Team::class)
-            ->tenantProfile(EditTeamProfile::class)
-            ->registration()
-            ->tenantRegistration(RegisterTeam::class);
+            ->tenant(Team::class, ownershipRelationship: 'team')
+            ->tenantProfile(EditTeamProfile::class);
+           // ->registration()
+           // ->tenantRegistration(RegisterTeam::class);
     }
 }
