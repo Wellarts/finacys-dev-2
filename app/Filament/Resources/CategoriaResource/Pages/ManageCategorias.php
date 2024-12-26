@@ -10,10 +10,14 @@ class ManageCategorias extends ManageRecords
 {
     protected static string $resource = CategoriaResource::class;
 
+    protected static ?string $title = 'Categorias';
+
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()
+                ->label('Novo')
+                ->modalHeading('Usuário'),
         ];
     }
 }

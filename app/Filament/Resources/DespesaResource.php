@@ -14,12 +14,17 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms\Components\Grid;
+use Carbon\Carbon;
 
 class DespesaResource extends Resource
 {
     protected static ?string $model = Despesa::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-s-arrow-down-on-square-stack';
+
+    protected static ?string $navigationLabel = 'Despesas';
+
+    protected static ?string $navigationGroup = 'Lançamentos';
 
     public static function form(Form $form): Form
     {
@@ -82,20 +87,44 @@ class DespesaResource extends Resource
                                         titleAttribute: 'nome',
                                         modifyQueryUsing: fn(Builder $query, Get $get) => $query->where('categoria_id', $get('categoria_id'))->whereBelongsTo(Filament::getTenant()),
                                     ),
+                                Forms\Components\ToggleButtons::make('pago')
+                                    ->label('Pago?')
+                                    ->live()
+                                    ->default(true)
+                                    ->afterStateUpdated(function ($state, callable $set) {
+                                        if ($state == true) {
+                                            return $set('data_pagamento', Carbon::now()->format('Y-m-d'));
+                                        } else {
+                                            return $set('data_pagamento', null);
+                                        }
+                                    })
+                                    ->boolean()
+                                    ->grouped(),
                                 Forms\Components\DatePicker::make('data_vencimento')
+                                    ->default(now())
+                                    ->required()
                                     ->label('Data Vencimento')
                                     ->required(),
                                 Forms\Components\DatePicker::make('data_pagamento')
-                                    ->required(),
-                                Forms\Components\ToggleButtons::make('pago')
-                                    ->label('Pago?')
-                                    ->default(true)
-                                    ->boolean()
-                                    ->grouped(),
+                                    ->displayFormat('d/m/Y')
+                                    ->default(now())
+                                    ->label('Data Pagamento')
+                                    ->required(fn(Get $get): bool => ($get('pago') == true)),
+                                Forms\Components\Toggle::make('ignorado')
+                                    ->columnSpan([
+                                        'xl' => 2,
+                                        '2xl' => 2,
+                                    ])
+                                    ->helperText('Não será aplicado nos totais de despesas'),
 
                             ]),
 
+
                         Tabs\Tab::make('Parcelamentos')
+                            ->columns([
+                                'xl' => 3,
+                                '2xl' => 3,
+                            ])
                             ->schema([
                                 Forms\Components\ToggleButtons::make('parcelado')
                                     ->label('Parcelado?')
@@ -105,10 +134,12 @@ class DespesaResource extends Resource
                                     ->grouped(),
                                 Forms\Components\TextInput::make('qtd_parcela')
                                     ->label('Qtd Parcelas')
-                                    ->required(fn (Get $get): bool => ($get('parcelado') == true))
+                                    ->hidden(fn(Get $get): bool => ($get('parcelado') == false))
+                                    ->required(fn(Get $get): bool => ($get('parcelado') == true))
                                     ->numeric(),
                                 Forms\Components\Select::make('forma_parcelamento')
                                     ->label('Parcelamento')
+                                    ->hidden(fn(Get $get): bool => ($get('parcelado') == false))
                                     ->default(30)
                                     ->options([
                                         '7' => 'Semanal',
@@ -120,8 +151,9 @@ class DespesaResource extends Resource
 
 
                                 Forms\Components\TextInput::make('anexo')
+                                    ->hidden(fn(Get $get): bool => ($get('parcelado') == false))
                                     ->maxLength(255),
-                                Forms\Components\Toggle::make('ignorado'),
+
 
 
 

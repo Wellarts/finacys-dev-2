@@ -10,10 +10,14 @@ class ManageSubCategorias extends ManageRecords
 {
     protected static string $resource = SubCategoriaResource::class;
 
+    protected static ?string $title = 'SubCategorias';
+
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()
+                ->label('Nova')
+                ->modalHeading('SubCategorias'),
         ];
     }
 }

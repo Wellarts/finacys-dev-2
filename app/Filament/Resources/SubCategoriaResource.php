@@ -13,6 +13,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Facades\Filament;
+use Filament\Tables\Filters\SelectFilter;
 
 class SubCategoriaResource extends Resource
 {
@@ -38,7 +39,7 @@ class SubCategoriaResource extends Resource
                 Forms\Components\TextInput::make('nome')
                     ->label('SubCategoria')
                     ->required(),
-                    
+
             ]);
     }
 
@@ -54,7 +55,9 @@ class SubCategoriaResource extends Resource
                     ->searchable(),
             ])
             ->filters([
-                //
+                SelectFilter::make('categoria_id')
+                    ->label('Categoria')
+                    ->relationship('categoria', 'nome'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

@@ -10,10 +10,14 @@ class ManageUsers extends ManageRecords
 {
     protected static string $resource = UserResource::class;
 
+    protected static ?string $title = 'Usuários';
+
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()
+                ->label('Novo')
+                ->modalHeading('Usuário'),
         ];
     }
 }
