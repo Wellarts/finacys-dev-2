@@ -43,15 +43,17 @@ class ContaResource extends Resource
                                 ->searchable()
                                 ->live()
                                 ->afterStateUpdated(function ($state, callable $set) {
-                                    if (Banco::find($state)->nome != null) {
-                                        $set('descricao', Banco::find($state)->nome);
-                                    } else {
+                                    if ($state != null) {
+                                        $set('descricao', Banco::find($state)->nome.' - ');
+                                                                       } else {
                                         $set('descricao', '');
                                     }
                                 })
+
                                 ->relationship('banco', 'nome'),
                             Forms\Components\TextInput::make('descricao')
                                 ->columnspan(2)
+                                ->hint('Dê um nome susgestivo para sua conta!')
                                 ->label('Descrição'),
                             Forms\Components\Radio::make('tipo')
                                 ->options([

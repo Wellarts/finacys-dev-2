@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Facades\Filament;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Support\Enums\Alignment;
 
 class SubCategoriaResource extends Resource
 {
@@ -50,7 +51,12 @@ class SubCategoriaResource extends Resource
                 Tables\Columns\TextColumn::make('categoria.nome')
                     ->numeric()
                     ->sortable(),
+                Tables\Columns\ColorColumn::make('categoria.cor')
+                    ->label('Cor')
+                    ->sortable()
+                    ->alignment(Alignment::Center),
                 Tables\Columns\TextColumn::make('nome')
+                    ->sortable()
                     ->label('SubCategoria')
                     ->searchable(),
             ])

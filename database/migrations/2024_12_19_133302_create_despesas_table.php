@@ -16,7 +16,7 @@ return new class extends Migration
             $table->decimal('valor_total',10,2);
             $table->boolean('pago');
             $table->date('data_vencimento');
-            $table->date('data_pagamento');
+            $table->date('data_pagamento')->nullable();
             $table->string('descricao');
             $table->foreignId('categoria_id')->constrained('categorias')->restrictOnDelete();
             $table->foreignId('sub_categoria_id')->constrained('sub_categorias')->restrictOnDelete();

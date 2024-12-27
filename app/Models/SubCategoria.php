@@ -18,6 +18,11 @@ class SubCategoria extends Model
         return $this->belongsTo(Categoria::class);
     }
 
+    public function despesa() {
+        return $this->belongsTo(Despesa::class);
+    }
+
+
     public function team() {
         return $this->belongsTo(Team::class);
     }

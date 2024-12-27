@@ -24,9 +24,14 @@ class Despesa extends Model
         'parcelado',
         'forma_parcelamento',
         'qtd_parcela',
+        'ordem_parcela',
         'valor_parcela',
         'team_id',
-        
+
+    ];
+
+    protected $casts = [
+        'anexo' => 'array',
     ];
 
     public function team() {

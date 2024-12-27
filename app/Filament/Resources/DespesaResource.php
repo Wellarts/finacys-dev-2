@@ -10,11 +10,13 @@ use Filament\Forms\Components\Tabs;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Resources\Resource;
+use Filament\Tables\Columns\Summarizers\Count;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms\Components\Grid;
 use Carbon\Carbon;
+use App\Models\Conta;
 
 class DespesaResource extends Resource
 {
@@ -44,16 +46,20 @@ class DespesaResource extends Resource
 
                                 Forms\Components\TextInput::make('valor_total')
                                     ->label('Valor Total')
+                                    ->autofocus()
+                                    // ->extraInputAttributes(['tabindex' => 1])
                                     ->numeric()
                                     ->prefix('R$')
                                     ->inputMode('decimal')
                                     ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 2),
                                 Forms\Components\TextInput::make('descricao')
                                     ->label('Descrição')
+                                    //  ->extraInputAttributes(['tabindex' => 2])
                                     ->columnSpan([
                                         'xl' => 2,
                                         '2xl' => 2,
                                     ])
+
                                     ->required(),
                                 Forms\Components\Select::make('conta_id')
                                     ->label('Conta')
@@ -64,7 +70,53 @@ class DespesaResource extends Resource
                                         name: 'conta',
                                         titleAttribute: 'descricao',
                                         modifyQueryUsing: fn(Builder $query) => $query->whereBelongsTo(Filament::getTenant()),
-                                    ),
+                                    )
+                                    ->createOptionForm([
+                                        Grid::make([
+                                            'xl' => 4,
+                                            '2xl' => 4,
+                                        ])->schema([
+                                            Forms\Components\Select::make('banco_id')
+                                                ->columnspan(2)
+                                                ->label('Banco')
+                                                ->searchable()
+                                                ->live()
+                                                ->afterStateUpdated(function ($state, callable $set) {
+                                                    if ($state != null) {
+                                                        $set('descricao', Banco::find($state)->nome . ' - ');
+                                                    } else {
+                                                        $set('descricao', '');
+                                                    }
+                                                })
+
+                                                ->relationship('banco', 'nome'),
+                                            Forms\Components\TextInput::make('descricao')
+                                                ->columnspan(2)
+                                                ->hint('Dê um nome susgestivo para sua conta!')
+                                                ->label('Descrição'),
+                                            Forms\Components\Radio::make('tipo')
+                                                ->options([
+                                                    'contaCorrente' => 'Conta Corrente',
+                                                    'poupanca' => 'Poupança',
+                                                    'investimento' => 'Investimento',
+                                                    'Outro' => 'Outro',
+
+                                                ]),
+                                            Forms\Components\TextInput::make('agencia')
+                                                ->label('Nº da Agência'),
+                                            Forms\Components\TextInput::make('conta')
+                                                ->label('Nº da Conta'),
+
+                                            Forms\Components\TextInput::make('saldo')
+                                                ->label('Saldo')
+                                                ->required()
+                                                ->default(0)
+                                                ->numeric()
+                                                ->prefix('R$')
+                                                ->inputMode('decimal')
+                                                ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 2),
+                                        ]),
+                                    ]),
 
                                 Forms\Components\Select::make('categoria_id')
                                     ->label('Categoria')
@@ -76,7 +128,12 @@ class DespesaResource extends Resource
                                         name: 'categoria',
                                         titleAttribute: 'nome',
                                         modifyQueryUsing: fn(Builder $query) => $query->whereBelongsTo(Filament::getTenant()),
-                                    ),
+                                    )
+                                    ->createOptionForm([
+                                        Forms\Components\TextInput::make('nome')
+                                            ->required(),
+                                        Forms\Components\ColorPicker::make('cor'),
+                                    ]),
                                 Forms\Components\Select::make('sub_categoria_id')
                                     ->label('SubCategoria')
                                     ->searchable()
@@ -86,9 +143,22 @@ class DespesaResource extends Resource
                                         name: 'subCategoria',
                                         titleAttribute: 'nome',
                                         modifyQueryUsing: fn(Builder $query, Get $get) => $query->where('categoria_id', $get('categoria_id'))->whereBelongsTo(Filament::getTenant()),
-                                    ),
+                                    )
+                                    ->createOptionForm([
+                                        Forms\Components\Select::make('categoria_id')
+                                            ->required()
+                                            ->relationship(
+                                                name: 'categoria',
+                                                titleAttribute: 'nome',
+                                                modifyQueryUsing: fn(Builder $query) => $query->whereBelongsTo(Filament::getTenant()),
+                                            ),
+                                        Forms\Components\TextInput::make('nome')
+                                            ->label('SubCategoria')
+                                            ->required(),
+                                    ]),
                                 Forms\Components\ToggleButtons::make('pago')
                                     ->label('Pago?')
+                                    //   ->extraInputAttributes(['tabindex' => 6])
                                     ->live()
                                     ->default(true)
                                     ->afterStateUpdated(function ($state, callable $set) {
@@ -102,11 +172,13 @@ class DespesaResource extends Resource
                                     ->grouped(),
                                 Forms\Components\DatePicker::make('data_vencimento')
                                     ->default(now())
+                                    //   ->extraInputAttributes(['tabindex' => 7])
                                     ->required()
                                     ->label('Data Vencimento')
                                     ->required(),
                                 Forms\Components\DatePicker::make('data_pagamento')
                                     ->displayFormat('d/m/Y')
+                                    //   ->extraInputAttributes(['tabindex' => 8])
                                     ->default(now())
                                     ->label('Data Pagamento')
                                     ->required(fn(Get $get): bool => ($get('pago') == true)),
@@ -131,14 +203,18 @@ class DespesaResource extends Resource
                                     ->default(false)
                                     ->boolean()
                                     ->live()
+                                    ->afterStateUpdated(function (callable $set, $state) {
+                                        if ($state == true) {
+                                            $set('pago', false);
+                                            $set('data_pagamento', null);
+                                        } else {
+                                            $set('pago', true);
+                                        }
+                                    })
                                     ->grouped(),
-                                Forms\Components\TextInput::make('qtd_parcela')
-                                    ->label('Qtd Parcelas')
-                                    ->hidden(fn(Get $get): bool => ($get('parcelado') == false))
-                                    ->required(fn(Get $get): bool => ($get('parcelado') == true))
-                                    ->numeric(),
                                 Forms\Components\Select::make('forma_parcelamento')
                                     ->label('Parcelamento')
+                                    //   ->extraInputAttributes(['tabindex' => 10])
                                     ->hidden(fn(Get $get): bool => ($get('parcelado') == false))
                                     ->default(30)
                                     ->options([
@@ -146,19 +222,47 @@ class DespesaResource extends Resource
                                         '15' => 'Quinzenal',
                                         '30' => 'Mensal',
                                         '180' => 'Semestral',
-                                        '360' => 'Mensal',
+                                        '360' => 'Anual',
                                     ]),
-
-
-                                Forms\Components\TextInput::make('anexo')
+                                Forms\Components\TextInput::make('qtd_parcela')
+                                    ->label('Qtd Parcelas')
+                                    //   ->extraInputAttributes(['tabindex' => 9])
                                     ->hidden(fn(Get $get): bool => ($get('parcelado') == false))
-                                    ->maxLength(255),
+                                    ->required(fn(Get $get): bool => ($get('parcelado') == true))
+                                    ->live(onBlur: true)
+                                    ->afterStateUpdated(function ($state, callable $set, Get $get) {
+                                        if ($state == true) {
+                                            return $set('valor_parcela', $get('valor_total') / $state);
+                                        } else {
+                                            return $set('valor_parcela', null);
+                                        }
+                                    })
+                                    ->numeric(),
+                                Forms\Components\TextInput::make('ordem_parcela')
+                                    ->label('Parcela Nº')
+                                    ->default(1)
+                                    ->readonly()
+                                    ->hidden(fn(Get $get, $context): bool => ($get('parcelado') == false))
+                                    ->required(fn(Get $get): bool => ($get('parcelado') == true))
+                                    ->numeric(),
 
 
 
 
                                 Forms\Components\TextInput::make('valor_parcela')
-                                    ->numeric(),
+                                    ->label('Valor Parcela')
+                                    //  ->extraInputAttributes(['tabindex' => 12])
+                                    ->hidden(fn(Get $get): bool => ($get('parcelado') == false))
+                                    ->required(fn(Get $get): bool => ($get('parcelado') == true))
+                                    ->prefix('R$')
+                                    ->inputMode('decimal')
+                                    ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 2),
+                                Forms\Components\FileUpload::make('anexo')
+                                    ->hidden(fn(Get $get): bool => ($get('parcelado') == false))
+                                    ->columnSpanFull()
+                                    ->label('Anexo')
+                                    ->multiple()
+                                    ->downloadable(),
                             ]),
                     ]),
 
@@ -171,38 +275,94 @@ class DespesaResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('valor_total')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\IconColumn::make('pago')
-                    ->boolean(),
+                    ->label('Valor Total')
+                    ->money('BRL'),
+                Tables\Columns\TextColumn::make('pago')
+                    ->summarize(Count::make())
+                    ->Label('Pago?')
+                    ->badge()
+                    ->alignCenter()
+                    ->color(fn(string $state): string => match ($state) {
+                        '0' => 'danger',
+                        '1' => 'success',
+                    })
+                    ->formatStateUsing(function ($state) {
+                        if ($state == 0) {
+                            return 'Não';
+                        }
+                        if ($state == 1) {
+                            return 'Sim';
+                        }
+                    }),
                 Tables\Columns\TextColumn::make('data_vencimento')
-                    ->date()
+                    ->alignCenter()
+                    ->label('Data Vencimento')
+                    ->date('d/m/Y')
+                    ->alignCenter()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('data_pagamento')
+                    ->label('Data Pagamento')
                     ->date()
+                    ->alignCenter()
+                    ->date('d/m/Y')
+                    ->alignCenter()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('descricao')
+                    ->label('Descrição')
+                    ->words(2)
                     ->searchable(),
-                Tables\Columns\TextColumn::make('categoria_id')
-                    ->numeric()
+                Tables\Columns\TextColumn::make('conta.descricao')
+                    ->label('Conta')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('conta_id')
-                    ->numeric()
+                Tables\Columns\TextColumn::make('categoria.nome')
+                    ->label('Categoria')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('anexo')
-                    ->searchable(),
-                Tables\Columns\IconColumn::make('ignorado')
-                    ->boolean(),
-                Tables\Columns\IconColumn::make('parcelado')
-                    ->boolean(),
-                Tables\Columns\TextColumn::make('forma_parcelamento')
-                    ->searchable(),
+                Tables\Columns\TextColumn::make('subCategoria.nome')
+                    ->label('SubCategoria')
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('ignorado')
+                    ->summarize(Count::make())
+                    ->Label('Ignorado?')
+                    ->badge()
+                    ->alignCenter()
+                    ->color(fn(string $state): string => match ($state) {
+                        '0' => 'danger',
+                        '1' => 'success',
+                    })
+                    ->formatStateUsing(function ($state) {
+                        if ($state == 0) {
+                            return 'Não';
+                        }
+                        if ($state == 1) {
+                            return 'Sim';
+                        }
+                    }),
+                Tables\Columns\TextColumn::make('parcelado')
+                    ->summarize(Count::make())
+                    ->Label('Parcelado?')
+                    ->badge()
+                    ->alignCenter()
+                    ->color(fn(string $state): string => match ($state) {
+                        '0' => 'danger',
+                        '1' => 'success',
+                    })
+                    ->formatStateUsing(function ($state) {
+                        if ($state == 0) {
+                            return 'Não';
+                        }
+                        if ($state == 1) {
+                            return 'Sim';
+                        }
+                    }),
                 Tables\Columns\TextColumn::make('qtd_parcela')
-                    ->numeric()
-                    ->sortable(),
+                    ->alignCenter()
+                    ->label('Qtd Parcelas')
+                    ->numeric(),
                 Tables\Columns\TextColumn::make('valor_parcela')
-                    ->numeric()
-                    ->sortable(),
+                    ->alignCenter()
+                    ->label('Valor Parcela')
+                    ->numeric(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -216,7 +376,14 @@ class DespesaResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->after(function ($record) {
+                        if ($record->pago == true) {
+                            $saldoConta = Conta::find($record->conta_id);
+                            $saldoConta->saldo = $saldoConta->saldo - $record->valor_parcela;
+                            $saldoConta->save();
+                        }
+                    }),
                 Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([

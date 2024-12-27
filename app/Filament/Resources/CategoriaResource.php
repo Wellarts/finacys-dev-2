@@ -29,8 +29,7 @@ class CategoriaResource extends Resource
         return $form
             ->schema([
                 Forms\Components\TextInput::make('nome')
-                    ->required()
-                    ->maxLength(255),
+                    ->required(),                    
                 Forms\Components\ColorPicker::make('cor'),
 
 
