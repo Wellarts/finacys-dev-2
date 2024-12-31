@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\DespesaResource\Pages;
+use App\Models\Banco;
 use App\Models\Despesa;
 use Filament\Facades\Filament;
 use Filament\Forms;
@@ -17,6 +18,10 @@ use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms\Components\Grid;
 use Carbon\Carbon;
 use App\Models\Conta;
+use Filament\Tables\Columns\Summarizers\Sum;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 
 class DespesaResource extends Resource
 {
@@ -47,7 +52,6 @@ class DespesaResource extends Resource
                                 Forms\Components\TextInput::make('valor_total')
                                     ->label('Valor Total')
                                     ->autofocus()
-                                    // ->extraInputAttributes(['tabindex' => 1])
                                     ->numeric()
                                     ->prefix('R$')
                                     ->inputMode('decimal')
@@ -171,15 +175,16 @@ class DespesaResource extends Resource
                                     ->boolean()
                                     ->grouped(),
                                 Forms\Components\DatePicker::make('data_vencimento')
-                                    ->default(now())
+                                    ->default(Carbon::now())
                                     //   ->extraInputAttributes(['tabindex' => 7])
                                     ->required()
+                                    ->displayFormat('d/m/Y')
                                     ->label('Data Vencimento')
                                     ->required(),
                                 Forms\Components\DatePicker::make('data_pagamento')
                                     ->displayFormat('d/m/Y')
                                     //   ->extraInputAttributes(['tabindex' => 8])
-                                    ->default(now())
+                                    ->default(Carbon::now())
                                     ->label('Data Pagamento')
                                     ->required(fn(Get $get): bool => ($get('pago') == true)),
                                 Forms\Components\Toggle::make('ignorado')
@@ -273,10 +278,8 @@ class DespesaResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('data_vencimento', 'asc   ')
             ->columns([
-                Tables\Columns\TextColumn::make('valor_total')
-                    ->label('Valor Total')
-                    ->money('BRL'),
                 Tables\Columns\TextColumn::make('pago')
                     ->summarize(Count::make())
                     ->Label('Pago?')
@@ -294,6 +297,20 @@ class DespesaResource extends Resource
                             return 'Sim';
                         }
                     }),
+                Tables\Columns\TextColumn::make('valor_total')
+                    ->summarize(Sum::make()->label('Total Despesas')->money('BRL'))
+                    ->label('Valor Total')
+                    ->money('BRL'),
+                Tables\Columns\TextColumn::make('qtd_parcela')
+                    ->summarize(Count::make()->label('Qtd Parcelas'))
+                    ->alignCenter()
+                    ->label('Qtd Parcelas')
+                    ->numeric(),
+                Tables\Columns\TextColumn::make('valor_parcela')
+                    ->summarize(Sum::make()->label('Total Parcelas'))
+                    ->money('BRL')
+                    ->alignCenter()
+                    ->label('Valor Parcela'),
                 Tables\Columns\TextColumn::make('data_vencimento')
                     ->alignCenter()
                     ->label('Data Vencimento')
@@ -322,7 +339,7 @@ class DespesaResource extends Resource
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('ignorado')
-                    ->summarize(Count::make())
+                    ->summarize(Count::make()->label('Qtd Ignoradas'))
                     ->Label('Ignorado?')
                     ->badge()
                     ->alignCenter()
@@ -339,7 +356,7 @@ class DespesaResource extends Resource
                         }
                     }),
                 Tables\Columns\TextColumn::make('parcelado')
-                    ->summarize(Count::make())
+                    ->summarize(Count::make()->label('Qtd Parceladas'))
                     ->Label('Parcelado?')
                     ->badge()
                     ->alignCenter()
@@ -355,14 +372,7 @@ class DespesaResource extends Resource
                             return 'Sim';
                         }
                     }),
-                Tables\Columns\TextColumn::make('qtd_parcela')
-                    ->alignCenter()
-                    ->label('Qtd Parcelas')
-                    ->numeric(),
-                Tables\Columns\TextColumn::make('valor_parcela')
-                    ->alignCenter()
-                    ->label('Valor Parcela')
-                    ->numeric(),
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -373,8 +383,40 @@ class DespesaResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                Filter::make('apagar')
+                    ->label('A Pagar')
+                    ->toggle()
+                    ->query(fn(Builder $query): Builder => $query->where('pago', false))->default(true),
+                Filter::make('pagas')
+                    ->label('Pagas')
+                    ->toggle()
+                    ->query(fn(Builder $query): Builder => $query->where('pago', true)),
+
+                SelectFilter::make('conta')->relationship('conta', 'descricao')->searchable(),
+                SelectFilter::make('categoria')->relationship('categoria', 'nome')->searchable(),
+                SelectFilter::make('subCategoria')->relationship('subCategoria', 'nome')->searchable()
+                    ->label('SubCategoria'),
+                Tables\Filters\Filter::make('data_vencimento')
+                    ->form([
+                        Forms\Components\DatePicker::make('vencimento_de')
+                            ->label('Vencimento de:'),
+                        Forms\Components\DatePicker::make('vencimento_ate')
+                            ->label('Vencimento até:'),
+                    ])
+                    ->query(function ($query, array $data) {
+                        return $query
+                            ->when(
+                                $data['vencimento_de'],
+                                fn($query) => $query->whereDate('data_vencimento', '>=', $data['vencimento_de'])
+                            )
+                            ->when(
+                                $data['vencimento_ate'],
+                                fn($query) => $query->whereDate('data_vencimento', '<=', $data['vencimento_ate'])
+                            );
+                    })
+
             ])
+            ->filtersFormColumns(1)
             ->actions([
                 Tables\Actions\EditAction::make()
                     ->after(function ($record) {

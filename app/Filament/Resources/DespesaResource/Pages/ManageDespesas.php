@@ -44,6 +44,12 @@ class ManageDespesas extends ManageRecords
                             Despesa::create($parcelas);
                         }
                     } else {
+
+                        // Ajusta o valor da parcela para o valor total
+                        $record->valor_parcela = $record->valor_total;
+                        $record->save();                       
+
+                        // Ajusta o valor do saldo da conta
                         $saldoConta = Conta::find($record->conta_id);
                         $saldoConta->saldo = $saldoConta->saldo - $record->valor_total;
                         $saldoConta->save();
