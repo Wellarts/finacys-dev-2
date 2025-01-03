@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ReceitaResource\Pages;
 use App\Filament\Resources\ReceitaResource\RelationManagers;
+use App\Models\Banco;
 use App\Models\Receita;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -15,7 +16,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Forms\Components\Tabs;
 use Carbon\Carbon;
-
+use Filament\Facades\Filament;
+use Filament\Forms\Get;
 
 class ReceitaResource extends Resource
 {
@@ -34,10 +36,10 @@ class ReceitaResource extends Resource
         ->columns(null)
         ->schema([
 
-            Tabs::make('Despesa')
+            Tabs::make('Receita')
                 ->columns(null)
                 ->tabs([
-                    Tabs\Tab::make('Despesa')
+                    Tabs\Tab::make('Receita')
                         ->columns([
                             'xl' => 3,
                             '2xl' => 3,
@@ -187,7 +189,7 @@ class ReceitaResource extends Resource
                                     'xl' => 2,
                                     '2xl' => 2,
                                 ])
-                                ->helperText('Não será aplicado nos totais de despesas'),
+                                ->helperText('Não será aplicado nos totais de receitas'),
 
                         ]),
 
