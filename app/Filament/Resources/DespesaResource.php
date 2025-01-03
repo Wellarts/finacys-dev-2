@@ -21,7 +21,7 @@ use App\Models\Conta;
 use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\TernaryFilter;
+
 
 class DespesaResource extends Resource
 {
@@ -307,7 +307,7 @@ class DespesaResource extends Resource
                     ->label('Qtd Parcelas')
                     ->numeric(),
                 Tables\Columns\TextColumn::make('valor_parcela')
-                    ->summarize(Sum::make()->label('Total Parcelas'))
+                    ->summarize(Sum::make()->label('Total Parcelas')->money('BRL'))
                     ->money('BRL')
                     ->alignCenter()
                     ->label('Valor Parcela'),
