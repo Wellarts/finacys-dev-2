@@ -55,4 +55,11 @@ class Team extends Model
         return $this->HasMany(Config::class);
 
     }
+
+    public function cartoes() {
+
+        return $this->HasMany(Cartao::class);
+
+    }
+    
 }
