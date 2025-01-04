@@ -24,6 +24,7 @@ class Receita extends Model
         'parcelado',
         'forma_parcelamento',
         'qtd_parcela',
+        'ordem_parcela',
         'valor_parcela',
         'team_id',
 

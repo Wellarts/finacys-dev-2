@@ -14,6 +14,7 @@ use Filament\Forms\Components\Fieldset;
 use Filament\Tables\Table;
 use App\Models\Banco;
 use Filament\Set;
+use Filament\Tables\Columns\Summarizers\Sum;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
@@ -44,8 +45,8 @@ class ContaResource extends Resource
                                 ->live()
                                 ->afterStateUpdated(function ($state, callable $set) {
                                     if ($state != null) {
-                                        $set('descricao', Banco::find($state)->nome.' - ');
-                                                                       } else {
+                                        $set('descricao', Banco::find($state)->nome . ' - ');
+                                    } else {
                                         $set('descricao', '');
                                     }
                                 })
@@ -88,6 +89,18 @@ class ContaResource extends Resource
                 Tables\Columns\TextColumn::make('banco.nome')
                     ->numeric()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('saldo')
+                    ->badge()
+                    ->color(function ($state) {
+                        return $state > 0 ? 'success' : 'danger';
+                    })
+                    ->summarize(Sum::make()->label('Total Saldo')->money('BRL'))
+                    ->label('Saldo')
+                    ->money('BRL'),
+                Tables\Columns\TextColumn::make('descricao')
+                    ->label('Descrição')
+                    ->searchable(),
+
                 Tables\Columns\SelectColumn::make('tipo')
                     ->options([
                         'contaCorrente' => 'Conta Corrente',
@@ -102,12 +115,7 @@ class ContaResource extends Resource
                 Tables\Columns\TextColumn::make('conta')
                     ->label('Nº da Conta')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('descricao')
-                    ->label('Descrição')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('saldo')
-                    ->label('Saldo')
-                    ->money('BRL'),
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()

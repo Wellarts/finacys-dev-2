@@ -28,5 +28,13 @@ class Conta extends Model
         return $this->belongsTo(Banco::class);
     }
 
+    public function configDespesa() {
+        return $this->belongsTo(Config::class, 'despesa_categoria_id');
+    }
+
+    public function configReceita() {
+        return $this->belongsTo(Config::class, 'receita_categoria_id');
+    }
+
     
 }

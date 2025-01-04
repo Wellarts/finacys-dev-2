@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\DespesaResource\Pages;
 use App\Models\Banco;
+use App\Models\Config as ModelsConfig;
 use App\Models\Despesa;
 use Filament\Facades\Filament;
 use Filament\Forms;
@@ -21,7 +22,7 @@ use App\Models\Conta;
 use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
-
+use App\Models\Config;
 
 class DespesaResource extends Resource
 {
@@ -68,6 +69,7 @@ class DespesaResource extends Resource
                                 Forms\Components\Select::make('conta_id')
                                     ->label('Conta')
                                     ->required()
+                                    ->default(Config::first()->despesa_conta_id)
                                     ->searchable()
                                     ->preload()
                                     ->relationship(
@@ -126,12 +128,14 @@ class DespesaResource extends Resource
                                     ->label('Categoria')
                                     ->required()
                                     ->searchable()
+                                    ->default(Config::first()->despesa_categoria_id)
                                     ->preload()
                                     ->live()
                                     ->relationship(
                                         name: 'categoria',
                                         titleAttribute: 'nome',
                                         modifyQueryUsing: fn(Builder $query) => $query->whereBelongsTo(Filament::getTenant()),
+                                        
                                     )
                                     ->createOptionForm([
                                         Forms\Components\TextInput::make('nome')
@@ -298,13 +302,16 @@ class DespesaResource extends Resource
                         }
                     }),
                 Tables\Columns\TextColumn::make('valor_total')
-                    ->summarize(Sum::make()->label('Total Despesas')->money('BRL'))
                     ->label('Valor Total')
                     ->money('BRL'),
                 Tables\Columns\TextColumn::make('qtd_parcela')
-                    ->summarize(Count::make()->label('Qtd Parcelas'))
                     ->alignCenter()
                     ->label('Qtd Parcelas')
+                    ->numeric(),
+                Tables\Columns\TextColumn::make('ordem_parcela')
+                    ->summarize(Count::make()->label('Qtd Parcelas'))
+                    ->alignCenter()
+                    ->label('Parcela Nº')
                     ->numeric(),
                 Tables\Columns\TextColumn::make('valor_parcela')
                     ->summarize(Sum::make()->label('Total Parcelas')->money('BRL'))

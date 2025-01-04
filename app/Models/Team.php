@@ -43,4 +43,16 @@ class Team extends Model
         return $this->HasMany(SubCategoria::class);
 
     }
+
+    public function receitas() {
+
+        return $this->HasMany(Receita::class);
+
+    }
+
+    public function configs() {
+
+        return $this->HasMany(Config::class);
+
+    }
 }

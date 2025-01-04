@@ -33,4 +33,16 @@ class Categoria extends Model
         return $this->belongsTo(SubCategoria::class);
     }
 
+    public function receita() {
+        return $this->belongsTo(Receita::class);
+    }
+
+    public function configDespesa() {
+        return $this->belongsTo(Config::class, 'despesa_categoria_id');
+    }
+
+    public function configReceita() {
+        return $this->belongsTo(Config::class, 'receita_categoria_id');
+    }
+
 }

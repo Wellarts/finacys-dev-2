@@ -27,6 +27,7 @@ return new class extends Migration
             $table->string('forma_parcelamento')->nullable();
             $table->integer('qtd_parcela')->nullable();
             $table->decimal('valor_parcela')->nullable();
+            $table->integer('team_id');
             $table->timestamps();
         });
     }

@@ -26,4 +26,12 @@ class SubCategoria extends Model
     public function team() {
         return $this->belongsTo(Team::class);
     }
+
+    public function configDespesa() {
+        return $this->belongsTo(Config::class, 'despesa_categoria_id');
+    }
+
+    public function configReceita() {
+        return $this->belongsTo(Config::class, 'receita_categoria_id');
+    }
 }
