@@ -32,5 +32,10 @@ class Cartao extends Model
         return $this->belongsTo(Team::class);
     }
 
+    public function config()
+    {
+        return $this->belongsTo(Config::class);
+    }
+
     
 }

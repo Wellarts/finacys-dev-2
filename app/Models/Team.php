@@ -56,10 +56,17 @@ class Team extends Model
 
     }
 
-    public function cartoes() {
+    public function cartaos() {     
 
         return $this->HasMany(Cartao::class);
 
     }
+
+    public function faturas() {
+
+        return $this->HasMany(Fatura::class);
+
+    }
+    
     
 }

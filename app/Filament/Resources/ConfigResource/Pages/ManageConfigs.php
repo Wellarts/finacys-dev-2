@@ -14,7 +14,7 @@ class ManageConfigs extends ManageRecords
     {
         return [
             Actions\CreateAction::make()
-                ->label('Nova')
+                ->label('Adicionar Configuração')
                 ->modalHeading('Configurações')
         ];
     }

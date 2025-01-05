@@ -10,10 +10,14 @@ class ManageCartaos extends ManageRecords
 {
     protected static string $resource = CartaoResource::class;
 
+    protected static ?string $title = 'Cartões';
+
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()
+                ->label('Adicionar Cartão')
+                ->modalHeading('Cartões')
         ];
     }
 }

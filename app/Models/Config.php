@@ -40,5 +40,9 @@ class Config extends Model
         return $this->belongsTo(Conta::class, 'receita_conta_id');
     }
 
+    public function cartao() {
+        return $this->belongsTo(Cartao::class);
+    }
+
 
 }

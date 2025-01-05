@@ -18,8 +18,8 @@ return new class extends Migration
             $table->decimal('limite', 10, 2);
             $table->decimal('saldo', 10, 2);
             $table->decimal('fatura', 10, 2);
-            $table->date('vencimento_fatura');
-            $table->date('fechamento_fatura');
+            $table->integer('vencimento_fatura');
+            $table->integer('fechamento_fatura');
             $table->boolean('status');
             $table->foreignId('conta_id')->constrained();
             $table->foreignId('team_id')->constrained();

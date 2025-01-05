@@ -19,7 +19,7 @@ class ManageDespesas extends ManageRecords
     {
         return [
             Actions\CreateAction::make()
-                ->label('Nova')
+                ->label('Adicionar Despesa')
                 ->modalHeading('Despesas')
                 ->after(function ($record) {
                     if ($record->parcelado == true) {

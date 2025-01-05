@@ -16,7 +16,7 @@ class ManageSubCategorias extends ManageRecords
     {
         return [
             Actions\CreateAction::make()
-                ->label('Nova')
+                ->label('Adicionar SubCategoria')
                 ->modalHeading('SubCategorias'),
         ];
     }

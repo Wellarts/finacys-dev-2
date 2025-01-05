@@ -32,7 +32,7 @@ class ConfigResource extends Resource
                     ->label('Conta de Despesa Padrão')
                     ->required()
                     ->relationship(
-                        name: 'conta',
+                        name: 'contaDespesa',
                         titleAttribute: 'descricao',
                         modifyQueryUsing: fn(Builder $query) => $query->whereBelongsTo(Filament::getTenant()),
                     ),
@@ -40,7 +40,7 @@ class ConfigResource extends Resource
                     ->label('Categoria de Despesa Padrão')
                     ->required()
                     ->relationship(
-                        name: 'categoria',
+                        name: 'categoriaDespesa',
                         titleAttribute: 'nome',
                         modifyQueryUsing: fn(Builder $query) => $query->whereBelongsTo(Filament::getTenant()),
                     ),
@@ -55,7 +55,7 @@ class ConfigResource extends Resource
                     ->label('Conta de Receita Padrão')
                     ->required()
                     ->relationship(
-                        name: 'conta',
+                        name: 'contaReceita',
                         titleAttribute: 'descricao',
                         modifyQueryUsing: fn(Builder $query) => $query->whereBelongsTo(Filament::getTenant()),
                     ),
@@ -63,17 +63,17 @@ class ConfigResource extends Resource
                     ->label('Categoria de Receita Padrão')
                     ->required()
                     ->relationship(
-                        name: 'categoria',
+                        name: 'categoriaReceita',
                         titleAttribute: 'nome',
                         modifyQueryUsing: fn(Builder $query) => $query->whereBelongsTo(Filament::getTenant()),
                     ),
-                // Forms\Components\Select::make('receita_sub_categoria_id')
-                //     ->required()
-                //     ->relationship(
-                //         name: 'sub_categoria',
-                //         titleAttribute: 'nome',
-                //         modifyQueryUsing: fn(Builder $query) => $query->whereBelongsTo(Filament::getTenant()),
-                //     ),
+                Forms\Components\Select::make('cartao_id')
+                    ->required()
+                    ->relationship(
+                        name: 'cartao',
+                        titleAttribute: 'nome',
+                        modifyQueryUsing: fn(Builder $query) => $query->whereBelongsTo(Filament::getTenant()),
+                    ),
             ]);
     }
 

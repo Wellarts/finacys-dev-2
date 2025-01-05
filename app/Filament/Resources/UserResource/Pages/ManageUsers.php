@@ -16,8 +16,8 @@ class ManageUsers extends ManageRecords
     {
         return [
             Actions\CreateAction::make()
-                ->label('Novo')
-                ->modalHeading('Usuário'),
+                ->label('Adicionar Usuário')
+                ->modalHeading('Usuários'),
         ];
     }
 }

@@ -17,7 +17,7 @@ class ManageReceitas extends ManageRecords
     {
         return [
             Actions\CreateAction::make()
-            ->label('Nova')
+            ->label('Adicionar Receita')
                 ->modalHeading('Receitas')
                 ->after(function ($record) {
                     if ($record->parcelado == true) {

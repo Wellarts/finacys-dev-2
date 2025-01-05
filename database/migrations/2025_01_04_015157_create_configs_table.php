@@ -21,6 +21,8 @@ return new class extends Migration
             $table->foreignId('receita_categoria_id')->constrained('Categorias')->restrictOnDelete();
             $table->foreignId('receita_sub_categoria_id')->constrained('sub_categorias')->restrictOnDelete();
 
+            $table->foreignId('cartao_id')->constrained()->restrictOnDelete();
+
             $table->foreignId('team_id')->constrained()->restrictOnDelete();
             
             $table->timestamps();
