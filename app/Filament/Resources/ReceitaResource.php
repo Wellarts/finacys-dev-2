@@ -115,7 +115,8 @@ class ReceitaResource extends Resource
                                                 ->label('Nº da Agência'),
                                             Forms\Components\TextInput::make('conta')
                                                 ->label('Nº da Conta'),
-
+                                            Forms\Components\Hidden::make('team_id')
+                                                ->default(Filament::getTenant()->id),
                                             Forms\Components\TextInput::make('saldo')
                                                 ->label('Saldo')
                                                 ->required()
@@ -143,6 +144,8 @@ class ReceitaResource extends Resource
                                         Forms\Components\TextInput::make('nome')
                                             ->required(),
                                         Forms\Components\ColorPicker::make('cor'),
+                                        Forms\Components\Hidden::make('team_id')
+                                            ->default(Filament::getTenant()->id),
                                     ]),
                                 Forms\Components\Select::make('sub_categoria_id')
                                     ->label('SubCategoria')
@@ -165,6 +168,8 @@ class ReceitaResource extends Resource
                                         Forms\Components\TextInput::make('nome')
                                             ->label('SubCategoria')
                                             ->required(),
+                                        Forms\Components\Hidden::make('team_id')
+                                            ->default(Filament::getTenant()->id),
                                     ]),
                                 Forms\Components\ToggleButtons::make('recebido')
                                     ->label('Recebido?')
@@ -303,13 +308,13 @@ class ReceitaResource extends Resource
                             return 'Sim';
                         }
                     }),
-                Tables\Columns\TextColumn::make('valor_total')
-                    ->label('Valor Total')
-                    ->money('BRL'),
-                Tables\Columns\TextColumn::make('qtd_parcela')
-                    ->alignCenter()
-                    ->label('Qtd Parcelas')
-                    ->numeric(),
+                // Tables\Columns\TextColumn::make('valor_total')
+                //     ->label('Valor Total')
+                //     ->money('BRL'),
+                // Tables\Columns\TextColumn::make('qtd_parcela')
+                //     ->alignCenter()
+                //     ->label('Qtd Parcelas')
+                //     ->numeric(),
                 Tables\Columns\TextColumn::make('ordem_parcela')
                     ->summarize(Count::make()->label('Qtd Parcelas'))
                     ->alignCenter()
@@ -428,13 +433,13 @@ class ReceitaResource extends Resource
             ->filtersFormColumns(1)
             ->actions([
                 Tables\Actions\EditAction::make()
-                ->after(function ($record) {
-                    if ($record->pago == true) {
-                        $saldoConta = Conta::find($record->conta_id);
-                        $saldoConta->saldo = $saldoConta->saldo + $record->valor_parcela;
-                        $saldoConta->save();
-                    }
-                }),
+                    ->after(function ($record) {
+                        if ($record->recebido == true) {
+                            $saldoConta = Conta::find($record->conta_id);
+                            $saldoConta->saldo = $saldoConta->saldo + $record->valor_parcela;
+                            $saldoConta->save();
+                        }
+                    }),
                 Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([

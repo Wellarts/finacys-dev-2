@@ -112,7 +112,8 @@ class DespesaResource extends Resource
                                                 ->label('Nº da Agência'),
                                             Forms\Components\TextInput::make('conta')
                                                 ->label('Nº da Conta'),
-
+                                            Forms\Components\Hidden::make('team_id')
+                                                ->default(Filament::getTenant()->id),
                                             Forms\Components\TextInput::make('saldo')
                                                 ->label('Saldo')
                                                 ->required()
@@ -135,12 +136,14 @@ class DespesaResource extends Resource
                                         name: 'categoria',
                                         titleAttribute: 'nome',
                                         modifyQueryUsing: fn(Builder $query) => $query->whereBelongsTo(Filament::getTenant()),
-                                        
+
                                     )
                                     ->createOptionForm([
                                         Forms\Components\TextInput::make('nome')
                                             ->required(),
                                         Forms\Components\ColorPicker::make('cor'),
+                                        Forms\Components\Hidden::make('team_id')
+                                            ->default(Filament::getTenant()->id),
                                     ]),
                                 Forms\Components\Select::make('sub_categoria_id')
                                     ->label('SubCategoria')
@@ -163,6 +166,8 @@ class DespesaResource extends Resource
                                         Forms\Components\TextInput::make('nome')
                                             ->label('SubCategoria')
                                             ->required(),
+                                        Forms\Components\Hidden::make('team_id')
+                                            ->default(Filament::getTenant()->id),
                                     ]),
                                 Forms\Components\ToggleButtons::make('pago')
                                     ->label('Pago?')
@@ -301,13 +306,13 @@ class DespesaResource extends Resource
                             return 'Sim';
                         }
                     }),
-                Tables\Columns\TextColumn::make('valor_total')
-                    ->label('Valor Total')
-                    ->money('BRL'),
-                Tables\Columns\TextColumn::make('qtd_parcela')
-                    ->alignCenter()
-                    ->label('Qtd Parcelas')
-                    ->numeric(),
+                // Tables\Columns\TextColumn::make('valor_total')
+                //     ->label('Valor Total')
+                //     ->money('BRL'),
+                // Tables\Columns\TextColumn::make('qtd_parcela')
+                //     ->alignCenter()
+                //     ->label('Qtd Parcelas')
+                //     ->numeric(),
                 Tables\Columns\TextColumn::make('ordem_parcela')
                     ->summarize(Count::make()->label('Qtd Parcelas'))
                     ->alignCenter()

@@ -14,7 +14,11 @@ return new class extends Migration
         Schema::create('data_faturas', function (Blueprint $table) {
             $table->id();
             $table->string('nome');
-            $table->date('valor_fatura');
+            $table->foreignId('cartao_id')->constrained();
+            $table->decimal('valor_fatura', 10, 2);
+            $table->decimal('valor_pago', 10, 2);
+            $table->boolean('pago');
+            $table->boolean('fechado');
             $table->date('vencimento_fatura');
             $table->foreignId('team_id')->constrained();
             $table->timestamps();
@@ -22,7 +26,7 @@ return new class extends Migration
 
         Schema::create('faturas', function (Blueprint $table) {
             $table->id();
-            $table->decimal('valor', 10, 2);
+            $table->decimal('valor_total', 10, 2);
             $table->foreignId('data_fatura_id')->constrained();
             $table->date('data_vencimento');
             $table->date('data_pagamento');

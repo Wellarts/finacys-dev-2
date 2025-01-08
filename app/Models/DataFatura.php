@@ -11,9 +11,13 @@ class DataFatura extends Model
 
     protected $fillable = [
         'nome',
+        'cartao_id',
         'valor_fatura',
+        'valor_pago',
+        'pago',
+        'fechado',
         'vencimento_fatura',
-        'team_id',
+        'team_id'
     ];
 
     public function faturas() {
@@ -22,5 +26,9 @@ class DataFatura extends Model
 
     public function team() {
         return $this->belongsTo(Team::class);
+    }
+
+    public function cartao() {
+        return $this->belongsTo(Cartao::class);
     }
 }

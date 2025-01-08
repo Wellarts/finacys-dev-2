@@ -10,7 +10,7 @@ class Fatura extends Model
     use HasFactory;
 
     protected $fillable = [
-        'valor',
+        'valor_total',
         'data_fatura_id',
         'data_vencimento',
         'data_pagamento',
@@ -28,6 +28,12 @@ class Fatura extends Model
         'ordem_parcela',
         'forma_parcelamento'
     ];
+
+    protected $casts = [
+        'anexo' => 'array',
+    ];
+
+
 
     public function dataFatura() {
         return $this->belongsTo(DataFatura::class);

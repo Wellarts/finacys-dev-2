@@ -67,6 +67,12 @@ class Team extends Model
         return $this->HasMany(Fatura::class);
 
     }
+
+    public function dataFaturas() {
+
+        return $this->HasMany(DataFatura::class);
+
+    }
     
     
 }
