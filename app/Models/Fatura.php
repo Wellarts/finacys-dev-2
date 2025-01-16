@@ -26,7 +26,8 @@ class Fatura extends Model
         'qtd_parcela',
         'valor_parcela',
         'ordem_parcela',
-        'forma_parcelamento'
+        'forma_parcelamento',
+        'data_fatura_id',
     ];
 
     protected $casts = [

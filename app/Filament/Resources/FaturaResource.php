@@ -4,7 +4,9 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\FaturaResource\Pages;
 use App\Filament\Resources\FaturaResource\RelationManagers;
+use App\Jobs\CreateFaturaJob;
 use App\Models\Banco;
+use App\Models\Cartao;
 use App\Models\Fatura;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -38,6 +40,11 @@ class FaturaResource extends Resource
 
     protected static ?string $navigationGroup = 'Lançamentos';
 
+    
+    public static function executeJob()
+    {
+        dispatch(new CreateFaturaJob());
+    }
 
     public static function form(Form $form): Form
     {
@@ -78,8 +85,18 @@ class FaturaResource extends Resource
                                     ->searchable()
                                     ->live(onBlur: true)
                                     ->afterStateUpdated(function ($state, callable $set) {
+                                        dispatch(new CreateFaturaJob());
                                         if ($state != null) {
-                                            $set('data_fatura_id', DataFatura::where('cartao_id', $state)->orderBy('id', 'desc')->first()->id);
+                                            $set('data_fatura_id', DataFatura::where('cartao_id', $state)->orderBy('id', 'asc')->first()->id);
+                                         //   $set('data_fatura', 'Fatura '.Cartao::where('id', $state)->first()->vencimento_fatura .'/'.Carbon::now()->addMonth()->format('m/Y').' - '. Cartao::where('id', $state)->first()->nome);
+                                            $set(
+                                                'data_vencimento',
+                                                Carbon::create(now()->format('Y-m-d'))
+                                                    ->startOfMonth()
+                                                    ->addDays(Cartao::where('id', $state)->first()->vencimento_fatura)
+                                                    ->addMonths(1)
+                                                    ->format('Y-m-d'),
+                                            );
                                         }
                                     })
                                     ->preload()
@@ -318,8 +335,7 @@ class FaturaResource extends Resource
                                     ->boolean()
                                     ->grouped(),
                                 Forms\Components\DatePicker::make('data_vencimento')
-                                    ->default(DataFatura::where('cartao_id', Config::first()->cartao_id)->orderBy('id', 'desc')->first()->vencimento_fatura)
-                                    //   ->extraInputAttributes(['tabindex' => 7])
+                                    ->default(DataFatura::where('cartao_id', Config::first()->cartao_id)->orderBy('id', 'asc')->first()->vencimento_fatura)
                                     ->required()
                                     ->displayFormat('d/m/Y')
                                     ->label('Data Vencimento')
@@ -335,15 +351,19 @@ class FaturaResource extends Resource
                                     ->required(fn(Get $get): bool => ($get('pago') == true)),
                                 Forms\Components\Toggle::make('ignorado')
                                     ->columnSpan([
-                                        'xl' => 2,
-                                        '2xl' => 2,
+                                        'xl' => 1,
+                                        '2xl' => 1,
                                     ])
                                     ->helperText('Não será aplicado nos totais de despesas'),
                                 Forms\Components\Select::make('data_fatura_id')
                                     ->label('Fatura')
+                                    ->columnSpan([
+                                        'xl' => 2,
+                                        '2xl' => 2,
+                                    ])
                                     ->searchable()
                                     ->default(function (Get $get) {
-                                        return  DataFatura::where('cartao_id', $get('cartao_id'))->orderBy('id', 'desc')->first()->id;
+                                        return  DataFatura::where('cartao_id', $get('cartao_id'))->orderBy('id', 'asc')->first()->id;
                                     })
                                     ->preload()
                                     ->relationship(
@@ -351,6 +371,8 @@ class FaturaResource extends Resource
                                         titleAttribute: 'nome',
                                         modifyQueryUsing: fn(Builder $query, Get $get) => $query->where('cartao_id', $get('cartao_id'))->whereBelongsTo(Filament::getTenant()),
                                     ),
+                                // Forms\Components\TextInput::make('data_fatura')
+                                //      ->label('Data Fatura')
 
                             ]),
 
@@ -436,13 +458,15 @@ class FaturaResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->defaultSort('data_vencimento', 'asc   ')
-            ->defaultGroup('data_vencimento','cartao_id')
-            // ->groups([
-            //     Group::make('data_vencimento')
+            ->defaultSort('data_vencimento', 'asc')
+            ->defaultGroup('cartao.nome', 'Cartão')
+             ->groups([
+                Group::make('cartao.nome')
+                    ->label('Cartão')
+                    
 
-            //         ->date(),
-            // ])
+                    
+            ])
             ->columns([
                 Tables\Columns\TextColumn::make('pago')
                     ->summarize(Count::make())
@@ -478,6 +502,12 @@ class FaturaResource extends Resource
                     ->money('BRL')
                     ->alignCenter()
                     ->label('Valor Parcela'),
+                Tables\Columns\TextColumn::make('dataFatura.nome')
+                    ->badge()
+                    ->alignCenter()
+                    ->label('Fatura')
+                    ->alignCenter()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('data_vencimento')
                     ->alignCenter()
                     ->label('Data Vencimento')
@@ -566,22 +596,24 @@ class FaturaResource extends Resource
                 Tables\Filters\Filter::make('data_vencimento')
                     ->form([
                         Forms\Components\DatePicker::make('vencimento_de')
-                            ->label('Vencimento de:'),
+                            ->label('Vencimento de:')
+                            ->default(Carbon::now()->startOfMonth()->addMonths(1)),
                         Forms\Components\DatePicker::make('vencimento_ate')
+                            ->default(Carbon::now()->endOfMonth()->addMonths(1))
                             ->label('Vencimento até:'),
                     ])
-           
-            ->query(function ($query, array $data) {
-                return $query
-                    ->when(
-                        $data['vencimento_de'],
-                        fn($query) => $query->whereDate('data_vencimento', '>=', $data['vencimento_de'])
-                    )
-                    ->when(
-                        $data['vencimento_ate'],
-                        fn($query) => $query->whereDate('data_vencimento', '<=', $data['vencimento_ate'])
-                    );
-            })
+
+                    ->query(function ($query, array $data) {
+                        return $query
+                            ->when(
+                                $data['vencimento_de'],
+                                fn($query) => $query->whereDate('data_vencimento', '>=', $data['vencimento_de'])
+                            )
+                            ->when(
+                                $data['vencimento_ate'],
+                                fn($query) => $query->whereDate('data_vencimento', '<=', $data['vencimento_ate'])
+                            );
+                    })
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
@@ -592,7 +624,6 @@ class FaturaResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
-
     }
 
     public static function getPages(): array
