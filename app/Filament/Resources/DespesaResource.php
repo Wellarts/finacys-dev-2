@@ -259,10 +259,6 @@ class DespesaResource extends Resource
                                     ->hidden(fn(Get $get, $context): bool => ($get('parcelado') == false))
                                     ->required(fn(Get $get): bool => ($get('parcelado') == true))
                                     ->numeric(),
-
-
-
-
                                 Forms\Components\TextInput::make('valor_parcela')
                                     ->label('Valor Parcela')
                                     //  ->extraInputAttributes(['tabindex' => 12])
@@ -306,13 +302,6 @@ class DespesaResource extends Resource
                             return 'Sim';
                         }
                     }),
-                // Tables\Columns\TextColumn::make('valor_total')
-                //     ->label('Valor Total')
-                //     ->money('BRL'),
-                // Tables\Columns\TextColumn::make('qtd_parcela')
-                //     ->alignCenter()
-                //     ->label('Qtd Parcelas')
-                //     ->numeric(),
                 Tables\Columns\TextColumn::make('ordem_parcela')
                     ->summarize(Count::make()->label('Qtd Parcelas'))
                     ->alignCenter()
