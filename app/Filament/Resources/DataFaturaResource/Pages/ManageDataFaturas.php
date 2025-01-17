@@ -17,6 +17,7 @@ class ManageDataFaturas extends ManageRecords
     {
         return [
             Actions\CreateAction::make()
+                ->hidden()
                 ->label('Nova Fatura')
                 ->modalHeading('Faturas'),
         ];
