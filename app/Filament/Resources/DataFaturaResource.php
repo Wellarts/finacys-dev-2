@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\DataFaturaResource\Pages;
 use App\Filament\Resources\DataFaturaResource\RelationManagers;
 use App\Models\DataFatura;
+use Carbon\Carbon;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
@@ -149,26 +150,27 @@ class DataFaturaResource extends Resource
                     ->query(fn(Builder $query): Builder => $query->where('pago', true)),
 
                 SelectFilter::make('cartao')->relationship('cartao', 'nome')->searchable(),
-                
-                Tables\Filters\Filter::make('data_vencimento')
+                Tables\Filters\Filter::make('vencimento_fatura')
                     ->form([
                         Forms\Components\DatePicker::make('vencimento_de')
-                            ->label('Vencimento de:'),
+                            ->label('Vencimento de:')
+                            ->default(Carbon::now()->startOfMonth()->addMonths(1)),
                         Forms\Components\DatePicker::make('vencimento_ate')
+                            ->default(Carbon::now()->endOfMonth()->addMonths(1))
                             ->label('Vencimento até:'),
                     ])
+
                     ->query(function ($query, array $data) {
                         return $query
                             ->when(
                                 $data['vencimento_de'],
-                                fn($query) => $query->whereDate('data_vencimento', '>=', $data['vencimento_de'])
+                                fn($query) => $query->whereDate('vencimento_fatura', '>=', $data['vencimento_de'])
                             )
                             ->when(
                                 $data['vencimento_ate'],
-                                fn($query) => $query->whereDate('data_vencimento', '<=', $data['vencimento_ate'])
+                                fn($query) => $query->whereDate('vencimento_fatura', '<=', $data['vencimento_ate'])
                             );
                     })
-
             ])
             ->actions([
                 Tables\Actions\EditAction::make()
