@@ -40,11 +40,6 @@ class FaturaResource extends Resource
 
     protected static ?string $navigationGroup = 'Lançamentos';
 
-    
-    public static function executeJob()
-    {
-        dispatch(new CreateFaturaJob());
-    }
 
     public static function form(Form $form): Form
     {
@@ -85,15 +80,15 @@ class FaturaResource extends Resource
                                     ->searchable()
                                     ->live(onBlur: true)
                                     ->afterStateUpdated(function ($state, callable $set) {
-                                        dispatch(new CreateFaturaJob());
+                                        //   dispatch(new CreateFaturaJob());
                                         if ($state != null) {
-                                            $set('data_fatura_id', DataFatura::where('cartao_id', $state)->orderBy('id', 'asc')->first()->id);
-                                         //   $set('data_fatura', 'Fatura '.Cartao::where('id', $state)->first()->vencimento_fatura .'/'.Carbon::now()->addMonth()->format('m/Y').' - '. Cartao::where('id', $state)->first()->nome);
+                                            //    $set('data_fatura_id', DataFatura::where('cartao_id', $state)->orderBy('id', 'asc')->first()->id);
+                                            $set('data_fatura', 'Fatura ' . Cartao::where('id', $state)->first()->vencimento_fatura . '/' . Carbon::now()->addMonth()->format('m/Y') . ' - ' . Cartao::where('id', $state)->first()->nome);
                                             $set(
                                                 'data_vencimento',
                                                 Carbon::create(now()->format('Y-m-d'))
                                                     ->startOfMonth()
-                                                    ->addDays(Cartao::where('id', $state)->first()->vencimento_fatura)
+                                                    ->addDays((Cartao::where('id', $state)->first()->vencimento_fatura - 1))
                                                     ->addMonths(1)
                                                     ->format('Y-m-d'),
                                             );
@@ -335,7 +330,13 @@ class FaturaResource extends Resource
                                     ->boolean()
                                     ->grouped(),
                                 Forms\Components\DatePicker::make('data_vencimento')
-                                    ->default(DataFatura::where('cartao_id', Config::first()->cartao_id)->orderBy('id', 'asc')->first()->vencimento_fatura)
+                                    ->default(function (Get $get) {
+                                      return  Carbon::create(now()->format('Y-m-d'))
+                                                    ->startOfMonth()
+                                                    ->addDays(((Cartao::where('id', $get('cartao_id'))->first()->vencimento_fatura) - 1))
+                                                    ->addMonths(1)
+                                                    ->format('Y-m-d');
+                                    })
                                     ->required()
                                     ->displayFormat('d/m/Y')
                                     ->label('Data Vencimento')
@@ -355,24 +356,32 @@ class FaturaResource extends Resource
                                         '2xl' => 1,
                                     ])
                                     ->helperText('Não será aplicado nos totais de despesas'),
-                                Forms\Components\Select::make('data_fatura_id')
-                                    ->label('Fatura')
+                                // Forms\Components\Select::make('data_fatura_id')
+                                //     ->label('Fatura')
+                                //     ->columnSpan([
+                                //         'xl' => 2,
+                                //         '2xl' => 2,
+                                //     ])
+                                //     ->searchable()
+                                //     ->default(function (Get $get) {
+                                //         return  DataFatura::where('cartao_id', $get('cartao_id'))->orderBy('id', 'asc')->first()->id;
+                                //     })
+                                //     ->preload()
+                                //     ->relationship(
+                                //         name: 'dataFatura',
+                                //         titleAttribute: 'nome',
+                                //         modifyQueryUsing: fn(Builder $query, Get $get) => $query->where('cartao_id', $get('cartao_id'))->whereBelongsTo(Filament::getTenant()),
+                                //     ),
+                                Forms\Components\TextInput::make('data_fatura')
                                     ->columnSpan([
                                         'xl' => 2,
                                         '2xl' => 2,
                                     ])
-                                    ->searchable()
+                                    // ->default(Cartao::where('id', Config::first()->cartao_id)->orderBy('id', 'asc')->first()->vencimento_fatura)
                                     ->default(function (Get $get) {
-                                        return  DataFatura::where('cartao_id', $get('cartao_id'))->orderBy('id', 'asc')->first()->id;
+                                        return 'Fatura ' . Config::where('cartao_id', $get('cartao_id'))->orderBy('id', 'asc')->first()->cartao->vencimento_fatura . '/' . Carbon::now()->addMonth()->format('m/Y') . ' - ' . Config::where('cartao_id', $get('cartao_id'))->orderBy('id', 'asc')->first()->cartao->nome;
                                     })
-                                    ->preload()
-                                    ->relationship(
-                                        name: 'dataFatura',
-                                        titleAttribute: 'nome',
-                                        modifyQueryUsing: fn(Builder $query, Get $get) => $query->where('cartao_id', $get('cartao_id'))->whereBelongsTo(Filament::getTenant()),
-                                    ),
-                                // Forms\Components\TextInput::make('data_fatura')
-                                //      ->label('Data Fatura')
+                                    ->label('Data Fatura'),
 
                             ]),
 
@@ -460,12 +469,12 @@ class FaturaResource extends Resource
         return $table
             ->defaultSort('data_vencimento', 'asc')
             ->defaultGroup('cartao.nome', 'Cartão')
-             ->groups([
+            ->groups([
                 Group::make('cartao.nome')
                     ->label('Cartão')
-                    
 
-                    
+
+
             ])
             ->columns([
                 Tables\Columns\TextColumn::make('pago')
@@ -502,7 +511,7 @@ class FaturaResource extends Resource
                     ->money('BRL')
                     ->alignCenter()
                     ->label('Valor Parcela'),
-                Tables\Columns\TextColumn::make('dataFatura.nome')
+                Tables\Columns\TextColumn::make('data_fatura')
                     ->badge()
                     ->alignCenter()
                     ->label('Fatura')

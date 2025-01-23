@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\FaturaResource\Pages;
 
 use App\Filament\Resources\FaturaResource;
+use App\Models\Cartao;
 use App\Models\DataFatura;
 use App\Models\Fatura;
 use Carbon\Carbon;
@@ -45,7 +46,7 @@ class ManageFaturas extends ManageRecords
                                 'cartao_id' => $record->cartao_id,
                                 'ignorado' => $record->ignorado,
                                 'parcelado' => $record->parcelado,
-                                'data_fatura_id' => ++$record->data_fatura_id,
+                                'data_fatura' => 'Fatura ' . Cartao::where('id', $record->cartao_id)->first()->vencimento_fatura . '/' . Carbon::now()->addMonths($cont)->format('m/Y') . ' - ' . Cartao::where('id', $record->cartao_id)->first()->nome,
                                 'valor_parcela' => $record->valor_parcela,
                                 'pago' => $record->pago,
                                 'anexo' => $record->anexo,
@@ -57,9 +58,9 @@ class ManageFaturas extends ManageRecords
 
                             Fatura::create($parcelas);
 
-                            $dataFatura = DataFatura::find($record->data_fatura_id - 1);
-                            $dataFatura->valor_fatura += $record->valor_parcela;
-                            $dataFatura->save();
+                            // $dataFatura = DataFatura::find($record->data_fatura_id - 1);
+                            // $dataFatura->valor_fatura += $record->valor_parcela;
+                            // $dataFatura->save();
                         }
                     } else {
 
@@ -67,9 +68,9 @@ class ManageFaturas extends ManageRecords
                         $record->valor_parcela = $record->valor_total;
                         $record->save();
 
-                        $dataFatura = DataFatura::find($record->data_fatura_id);
-                        $dataFatura->valor_fatura += $record->valor_parcela;
-                        $dataFatura->save();
+                        // $dataFatura = DataFatura::find($record->data_fatura_id);
+                        // $dataFatura->valor_fatura += $record->valor_parcela;
+                        // $dataFatura->save();
 
                         // // Ajusta o valor do saldo da conta
                         // $saldoConta = Conta::find($record->conta_id);
