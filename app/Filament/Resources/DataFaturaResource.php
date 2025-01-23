@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\DataFaturaResource\Pages;
 use App\Filament\Resources\DataFaturaResource\RelationManagers;
 use App\Models\DataFatura;
+use App\Models\Fatura;
 use Carbon\Carbon;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -25,7 +26,7 @@ class DataFaturaResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
-    protected static ?string $navigationLabel = 'Datas Faturas';
+    protected static ?string $navigationLabel = 'Faturas Fechadas';
 
     protected static ?string $navigationGroup = 'Faturas';
 
@@ -34,15 +35,12 @@ class DataFaturaResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('nome')
-                    ->disabled()
-                    ->label('Fatura'),
                 Forms\Components\Select::make('cartao_id')
                     ->disabled()
                     ->label('Cartão')
                     ->relationship('cartao', 'nome'),
                 Forms\Components\TextInput::make('valor_fatura')
-                    ->disabled()
+                    ->readOnly()
                     ->label('Valor')
                     ->prefix('R$')
                     ->inputMode('decimal')
@@ -53,9 +51,7 @@ class DataFaturaResource extends Resource
                     ->date(),
                 Forms\Components\ToggleButtons::make('pago')
                     ->label('Pago?')
-                    //   ->extraInputAttributes(['tabindex' => 6])
                     ->live()
-                    ->default(false)
                     ->afterStateUpdated(function (Get $get, callable $set) {
                         $set('valor_pago', $get('valor_fatura'));
                     })
@@ -77,24 +73,24 @@ class DataFaturaResource extends Resource
             ->defaultSort('vencimento_fatura')
             ->columns([
 
-                Tables\Columns\TextColumn::make('fechado')
-                    ->Label('Fechada?')
-                    ->badge()
-                    ->alignCenter()
-                    ->color(fn(string $state): string => match ($state) {
-                        '0' => 'danger',
-                        '1' => 'success',
-                    })
-                    ->formatStateUsing(function ($state) {
-                        if ($state == 0) {
-                            return 'Não';
-                        }
-                        if ($state == 1) {
-                            return 'Sim';
-                        }
-                    }),
+                // Tables\Columns\TextColumn::make('fechado')
+                //     ->Label('Fechada?')
+                //     ->badge()
+                //     ->alignCenter()
+                //     ->color(fn(string $state): string => match ($state) {
+                //         '0' => 'danger',
+                //         '1' => 'success',
+                //     })
+                //     ->formatStateUsing(function ($state) {
+                //         if ($state == 0) {
+                //             return 'Não';
+                //         }
+                //         if ($state == 1) {
+                //             return 'Sim';
+                //         }
+                //     }),
                 Tables\Columns\TextColumn::make('pago')
-                    
+
                     ->Label('Pago?')
                     ->badge()
                     ->alignCenter()
@@ -110,8 +106,12 @@ class DataFaturaResource extends Resource
                             return 'Sim';
                         }
                     }),
-                Tables\Columns\TextColumn::make('nome')
-                    ->label('Fatura')
+                // Tables\Columns\TextColumn::make('nome')
+                //     ->label('Fatura')
+                //     ->searchable(),
+
+                Tables\Columns\TextColumn::make('cartao.nome')
+                    ->label('Cartão')
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('valor_fatura')
@@ -174,7 +174,24 @@ class DataFaturaResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make()
-                    ->label('Pagar'),
+                    ->label(function($record){
+                        if($record->pago != 1){
+                            return 'Pagar';
+                        }
+                        else{
+                            return 'Pago';
+                        }
+                    })
+                    ->after(function ($record) {
+                        if($record->pago == 1 and $record->valor_pago != null) {
+                            $parcelasFatura = Fatura::where('cartao_id', $record->cartao_id)
+                                                ->where('data_vencimento', $record->vencimento_fatura)
+                                                ->update(['pago' => 1]);
+                                                
+                        }
+                        
+                        
+                    }),
                 Tables\Actions\DeleteAction::make()
                     ->hidden(),
             ])
