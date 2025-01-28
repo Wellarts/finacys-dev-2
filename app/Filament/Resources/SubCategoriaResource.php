@@ -47,6 +47,7 @@ class SubCategoriaResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('categoria.nome')
             ->columns([
                 Tables\Columns\TextColumn::make('categoria.nome')
                     ->numeric()

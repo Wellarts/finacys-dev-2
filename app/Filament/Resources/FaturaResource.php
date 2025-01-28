@@ -80,18 +80,44 @@ class FaturaResource extends Resource
                                     ->searchable()
                                     ->live(onBlur: true)
                                     ->afterStateUpdated(function ($state, callable $set) {
-                                        //   dispatch(new CreateFaturaJob());
                                         if ($state != null) {
-                                            //    $set('data_fatura_id', DataFatura::where('cartao_id', $state)->orderBy('id', 'asc')->first()->id);
-                                            $set('data_fatura', 'Fatura ' . Cartao::where('id', $state)->first()->vencimento_fatura . '/' . Carbon::now()->addMonth()->format('m/Y') . ' - ' . Cartao::where('id', $state)->first()->nome);
-                                            $set(
-                                                'data_vencimento',
-                                                Carbon::create(now()->format('Y-m-d'))
-                                                    ->startOfMonth()
-                                                    ->addDays((Cartao::where('id', $state)->first()->vencimento_fatura - 1))
-                                                    ->addMonths(1)
-                                                    ->format('Y-m-d'),
-                                            );
+                                            $cartao = Cartao::where('id', $state)->first();
+                                            $vencimentoFatura = $cartao->vencimento_fatura;
+                                            $fechamentoFatura = $cartao->fechamento_fatura;
+                                            $dataVencimento = Carbon::createFromFormat('d/m/Y', $vencimentoFatura . '/' . Carbon::now()->format('m/Y'));
+                                            $dataFechamento = Carbon::createFromFormat('d/m/Y', $fechamentoFatura . '/' . Carbon::now()->format('m/Y'));
+
+                                            if ($dataFechamento <= Carbon::now()) {
+                                                if ($vencimentoFatura < $fechamentoFatura) {
+                                                     $dataVencimento->addMonths(2);
+                                                } else {
+                                                    $dataVencimento->addMonths(1);
+                                                }
+                                            }
+
+                                            $dataVencimento->format('Y-m-d');
+
+                                            $set('data_fatura', 'Fatura: '.$dataVencimento->format('d/m/Y').' - '.$cartao->nome);
+                                            $set('data_vencimento', $dataVencimento->format('Y-m-d'));
+                                            ############################################
+                                            // $set('data_vencimento', function ($state) {
+                                            //     $cartao = Cartao::where('id', $state)->first();
+                                            //     $vencimentoFatura = $cartao->vencimento_fatura;
+                                            //     $fechamentoFatura = $cartao->fechamento_fatura;
+                                            //     $dataVencimento = Carbon::createFromFormat('d/m/Y', $vencimentoFatura . '/' . Carbon::now()->format('m/Y'));
+                                            //     $dataFechamento = Carbon::createFromFormat('d/m/Y', $fechamentoFatura . '/' . Carbon::now()->format('m/Y'));
+
+
+                                            //     if ($dataFechamento <= Carbon::now()) {
+                                            //         if ($vencimentoFatura < $fechamentoFatura) {
+                                            //             return  $dataVencimento->addMonths(2);
+                                            //         } else {
+                                            //             $dataVencimento->addMonths(1);
+                                            //         }
+                                            //     }
+
+                                            //     return $dataVencimento->format('Y-m-d');
+                                            // });
                                         }
                                     })
                                     ->preload()
@@ -331,11 +357,22 @@ class FaturaResource extends Resource
                                     ->grouped(),
                                 Forms\Components\DatePicker::make('data_vencimento')
                                     ->default(function (Get $get) {
-                                      return  Carbon::create(now()->format('Y-m-d'))
-                                                    ->startOfMonth()
-                                                    ->addDays(((Cartao::where('id', $get('cartao_id'))->first()->vencimento_fatura) - 1))
-                                                    ->addMonths(1)
-                                                    ->format('Y-m-d');
+                                        $cartao = Cartao::where('id', $get('cartao_id'))->first();
+                                        $vencimentoFatura = $cartao->vencimento_fatura;
+                                        $fechamentoFatura = $cartao->fechamento_fatura;
+                                        $dataVencimento = Carbon::createFromFormat('d/m/Y', $vencimentoFatura . '/' . Carbon::now()->format('m/Y'));
+                                        $dataFechamento = Carbon::createFromFormat('d/m/Y', $fechamentoFatura . '/' . Carbon::now()->format('m/Y'));
+
+
+                                        if ($dataFechamento <= Carbon::now()) {
+                                            if ($vencimentoFatura < $fechamentoFatura) {
+                                                return  $dataVencimento->addMonth(2);
+                                            } else {
+                                                $dataVencimento->addMonth(1);
+                                            }
+                                        }
+
+                                        return $dataVencimento->format('Y-m-d');
                                     })
                                     ->required()
                                     ->displayFormat('d/m/Y')
@@ -378,8 +415,24 @@ class FaturaResource extends Resource
                                         '2xl' => 2,
                                     ])
                                     // ->default(Cartao::where('id', Config::first()->cartao_id)->orderBy('id', 'asc')->first()->vencimento_fatura)
-                                    ->default(function (Get $get) {
-                                        return 'Fatura ' . Config::where('cartao_id', $get('cartao_id'))->orderBy('id', 'asc')->first()->cartao->vencimento_fatura . '/' . Carbon::now()->addMonth()->format('m/Y') . ' - ' . Config::where('cartao_id', $get('cartao_id'))->orderBy('id', 'asc')->first()->cartao->nome;
+                                    ->default(function () {
+                                        $cartao = Cartao::where('id', Config::first()->cartao_id)->first();
+                                        $vencimentoFatura = $cartao->vencimento_fatura;
+                                        $fechamentoFatura = $cartao->fechamento_fatura;
+                                        $dataVencimento = Carbon::createFromFormat('d/m/Y', $vencimentoFatura . '/' . Carbon::now()->format('m/Y'));
+                                        $dataFechamento = Carbon::createFromFormat('d/m/Y', $fechamentoFatura . '/' . Carbon::now()->format('m/Y'));
+
+                                        if ($dataFechamento <= Carbon::now()) {
+                                            if ($vencimentoFatura < $fechamentoFatura) {
+                                                 $dataVencimento->addMonths(2);
+                                            } else {
+                                                $dataVencimento->addMonths(1);
+                                            }
+                                        }
+
+                                        $dataVencimento->format('Y-m-d');
+
+                                        return 'Fatura: '.$dataVencimento->format('d/m/Y').' - '.$cartao->nome;
                                     })
                                     ->label('Data Fatura'),
 

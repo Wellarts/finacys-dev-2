@@ -183,16 +183,17 @@ class CartaoResource extends Resource
                                 ->prefix('R$')
                                 ->inputMode('decimal')
                                 ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 2),
-                            Forms\Components\TextInput::make('vencimento_fatura')
-                                ->label('Vencimento Fatura')
-                                ->numeric()
-                                ->integer()
-                                ->required(),
                             Forms\Components\TextInput::make('fechamento_fatura')
                                 ->label('Fechamento Fatura')
                                 ->numeric()
                                 ->integer()
                                 ->required(),
+                            Forms\Components\TextInput::make('vencimento_fatura')
+                                ->label('Vencimento Fatura')
+                                ->numeric()
+                                ->integer()
+                                ->required(),
+
                             Forms\Components\ToggleButtons::make('status')
                                 ->label('Ativado?')
                                 ->default(true)

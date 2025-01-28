@@ -29,6 +29,7 @@ class CategoriaResource extends Resource
         return $form
             ->schema([
                 Forms\Components\TextInput::make('nome')
+                    ->unique(fn($context) => $context === 'create')
                     ->required(),                    
                 Forms\Components\ColorPicker::make('cor'),
 
@@ -39,6 +40,7 @@ class CategoriaResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('nome')
             ->columns([
                 Tables\Columns\TextColumn::make('nome')
                     ->searchable(),

@@ -98,12 +98,7 @@ class Dashboard extends \Filament\Pages\Dashboard
 
         foreach ($cartoes as $cartao) {
             if ($cartao->fechamento_fatura == Carbon::now()->format('d')) {
-                Notification::make()
-                    ->title('ATENÇÃO: Fechamento de Fatura')
-                    ->body('O cartão: ' . $cartao->nome . 'fechou hoje a fatura.')
-                    ->danger()
-                    ->persistent()
-                    ->send();
+                
                 for ($cont = 0; $cont <= Fatura::where('cartao_id', $cartao->id)->count(); $cont++) {
                     $valorTotalFatura = Fatura::where('cartao_id', $cartao->id)->sum('valor_parcela');
                 }
@@ -111,10 +106,22 @@ class Dashboard extends \Filament\Pages\Dashboard
                     'cartao_id' => $cartao->id,
                     'valor_fatura' => $valorTotalFatura,
                     'vencimento_fatura' => Fatura::where('cartao_id', $cartao->id)->first()->data_vencimento,
+                    'pago' => false,
+                    'valor_pago' => 0,
                     'team_id' => $cartao->team_id,
                 ];
 
+             
+            if (!DataFatura::where('cartao_id', $cartao->id)->where('valor_fatura', $valorTotalFatura)->where('vencimento_fatura', Fatura::where('cartao_id', $cartao->id)->first()->data_vencimento)->exists()) {
                 DataFatura::create($fechamentoFatura);
+
+                Notification::make()
+                    ->title('ATENÇÃO: Fechamento de Fatura')
+                    ->body('A fatura do cartão: ' . $cartao->nome . ' está fechada.')
+                    ->danger()
+                    ->persistent()
+                    ->send();
+            }
             }
         }
     }
