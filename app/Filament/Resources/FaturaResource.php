@@ -3,8 +3,6 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\FaturaResource\Pages;
-use App\Filament\Resources\FaturaResource\RelationManagers;
-use App\Jobs\CreateFaturaJob;
 use App\Models\Banco;
 use App\Models\Cartao;
 use App\Models\Fatura;
@@ -19,16 +17,17 @@ use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Tabs;
 use App\Models\Config;
-use App\Models\DataFatura;
 use Carbon\Carbon;
 use Filament\Facades\Filament;
 use Filament\Forms\Get;
-use Filament\Forms\Set;
+use Filament\Notifications\Actions\Action;
+use Filament\Notifications\Notification;
 use Filament\Tables\Columns\Summarizers\Count;
 use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Grouping\Group;
+
 
 class FaturaResource extends Resource
 {
@@ -57,8 +56,12 @@ class FaturaResource extends Resource
                             ])
                             ->schema([
 
+                                Forms\Components\Hidden::make('id_compra')
+                                    ->default(rand(1000000000, 9999999999)),                               
+
                                 Forms\Components\TextInput::make('valor_total')
                                     ->label('Valor Total')
+                                    ->required()
                                     ->autofocus()
                                     ->numeric()
                                     ->prefix('R$')
@@ -679,11 +682,26 @@ class FaturaResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\DeleteAction::make()
+                 ->after(function ($record) {
+                    Notification::make()
+                        ->title('Demais parcelas')                        
+                        ->body('Deseja também excluir todas as parcelas não paga desta compra?')
+                        ->actions([
+                           Action::make('Sim')
+                                ->button()
+                                ->color('danger')
+                                ->url(route('deleteParcelas',$record->id_compra)),
+                             
+                                
+                        ])       
+                        ->persistent()
+                        ->send();
+                 }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                   // Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
     }

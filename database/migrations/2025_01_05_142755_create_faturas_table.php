@@ -11,21 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('data_faturas', function (Blueprint $table) {
-            $table->id();
-            $table->string('nome');
-            $table->foreignId('cartao_id')->constrained();
-            $table->decimal('valor_fatura', 10, 2);
-            $table->decimal('valor_pago', 10, 2);
-            $table->boolean('pago');
-            $table->boolean('fechado');
-            $table->date('vencimento_fatura');
-            $table->foreignId('team_id')->constrained();
-            $table->timestamps();
-        });
-
         Schema::create('faturas', function (Blueprint $table) {
             $table->id();
+            $table->integer('id_compra');
             $table->decimal('valor_total', 10, 2);
             $table->foreignId('data_fatura_id')->constrained();
             $table->date('data_vencimento');

@@ -168,10 +168,15 @@ class CartaoResource extends Resource
                                 ->numeric()
                                 ->prefix('R$')
                                 ->inputMode('decimal')
+                                ->live(onBlur: true)
+                                ->afterStateUpdated(function ($state, callable $set, $context) {
+                                    if($context === 'create') {
+                                        $set('saldo', $state);
+                                    }
+                                })
                                 ->currencyMask(thousandSeparator: '.', decimalSeparator: ',', precision: 2),
-
                             Forms\Components\TextInput::make('saldo')
-                                ->label('Valor Saldo')
+                                ->label('Limite Disponível')
                                 ->numeric()
                                 ->readonly()
                                 ->prefix('R$')

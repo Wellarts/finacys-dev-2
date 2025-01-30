@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\DeleteParcelasController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -16,3 +17,5 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 });
+//Route::get('novaParcela/{id}',[ControllerNovaParcela::class, 'novaParcela'])->name('novaParcela');
+Route::get('deleteParcelas/{idCompra}',[DeleteParcelasController::class, 'deleteParcelas'])->name('deleteParcelas');

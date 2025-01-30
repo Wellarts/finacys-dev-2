@@ -51,16 +51,17 @@ class ManageFaturas extends ManageRecords
                                 'pago' => $record->pago,
                                 'anexo' => $record->anexo,
                                 'team_id' => $record->team_id,
+                                'id_compra' => $record->id_compra,
 
 
                             ];
                             //dd($parcelas);
-
+                            
                             Fatura::create($parcelas);
 
-                            // $dataFatura = DataFatura::find($record->data_fatura_id - 1);
-                            // $dataFatura->valor_fatura += $record->valor_parcela;
-                            // $dataFatura->save();
+                            $cartao = Cartao::find($record->cartao_id);
+                            $cartao->limite -= $record->valor_parcela;
+                            $cartao->save();
                         }
                     } else {
 
@@ -68,15 +69,12 @@ class ManageFaturas extends ManageRecords
                         $record->valor_parcela = $record->valor_total;
                         $record->save();
 
-                        // $dataFatura = DataFatura::find($record->data_fatura_id);
-                        // $dataFatura->valor_fatura += $record->valor_parcela;
-                        // $dataFatura->save();
-
-                        // // Ajusta o valor do saldo da conta
-                        // $saldoConta = Conta::find($record->conta_id);
-                        // $saldoConta->saldo = $saldoConta->saldo - $record->valor_total;
-                        // $saldoConta->save();
                     }
+
+                    // Ajusta o limite do cartão
+                    $cartao = Cartao::find($record->cartao_id);
+                    $cartao->saldo -= $record->valor_total;
+                    $cartao->save();
                 })
         ];
     }
