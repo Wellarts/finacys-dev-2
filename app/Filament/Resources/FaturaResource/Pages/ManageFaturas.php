@@ -59,9 +59,9 @@ class ManageFaturas extends ManageRecords
                             
                             Fatura::create($parcelas);
 
-                            $cartao = Cartao::find($record->cartao_id);
-                            $cartao->limite -= $record->valor_parcela;
-                            $cartao->save();
+                            // $cartao = Cartao::find($record->cartao_id);
+                            // $cartao->saldo -= $record->valor_parcela;
+                            // $cartao->save();
                         }
                     } else {
 

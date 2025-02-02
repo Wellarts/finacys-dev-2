@@ -22,6 +22,7 @@ use Filament\Facades\Filament;
 use Filament\Forms\Get;
 use Filament\Notifications\Actions\Action;
 use Filament\Notifications\Notification;
+use Filament\Tables\Actions\ImportAction;
 use Filament\Tables\Columns\Summarizers\Count;
 use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Filters\Filter;
@@ -57,7 +58,7 @@ class FaturaResource extends Resource
                             ->schema([
 
                                 Forms\Components\Hidden::make('id_compra')
-                                    ->default(rand(1000000000, 9999999999)),                               
+                                    ->default(rand(1000000000, 9999999999)),
 
                                 Forms\Components\TextInput::make('valor_total')
                                     ->label('Valor Total')
@@ -92,7 +93,7 @@ class FaturaResource extends Resource
 
                                             if ($dataFechamento <= Carbon::now()) {
                                                 if ($vencimentoFatura < $fechamentoFatura) {
-                                                     $dataVencimento->addMonths(2);
+                                                    $dataVencimento->addMonths(2);
                                                 } else {
                                                     $dataVencimento->addMonths(1);
                                                 }
@@ -100,7 +101,7 @@ class FaturaResource extends Resource
 
                                             $dataVencimento->format('Y-m-d');
 
-                                            $set('data_fatura', 'Fatura: '.$dataVencimento->format('d/m/Y').' - '.$cartao->nome);
+                                            $set('data_fatura', 'Fatura: ' . $dataVencimento->format('d/m/Y') . ' - ' . $cartao->nome);
                                             $set('data_vencimento', $dataVencimento->format('Y-m-d'));
                                             ############################################
                                             // $set('data_vencimento', function ($state) {
@@ -427,7 +428,7 @@ class FaturaResource extends Resource
 
                                         if ($dataFechamento <= Carbon::now()) {
                                             if ($vencimentoFatura < $fechamentoFatura) {
-                                                 $dataVencimento->addMonths(2);
+                                                $dataVencimento->addMonths(2);
                                             } else {
                                                 $dataVencimento->addMonths(1);
                                             }
@@ -435,7 +436,7 @@ class FaturaResource extends Resource
 
                                         $dataVencimento->format('Y-m-d');
 
-                                        return 'Fatura: '.$dataVencimento->format('d/m/Y').' - '.$cartao->nome;
+                                        return 'Fatura: ' . $dataVencimento->format('d/m/Y') . ' - ' . $cartao->nome;
                                     })
                                     ->label('Data Fatura'),
 
@@ -662,7 +663,7 @@ class FaturaResource extends Resource
                     ->form([
                         Forms\Components\DatePicker::make('vencimento_de')
                             ->label('Vencimento de:')
-                            ->default(Carbon::now()->startOfMonth()->addMonths(1)),
+                            ->default(Carbon::now()),
                         Forms\Components\DatePicker::make('vencimento_ate')
                             ->default(Carbon::now()->endOfMonth()->addMonths(1))
                             ->label('Vencimento até:'),
@@ -680,28 +681,36 @@ class FaturaResource extends Resource
                             );
                     })
             ])
+
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make()
-                 ->after(function ($record) {
-                    Notification::make()
-                        ->title('Demais parcelas')                        
-                        ->body('Deseja também excluir todas as parcelas não paga desta compra?')
-                        ->actions([
-                           Action::make('Sim')
-                                ->button()
-                                ->color('danger')
-                                ->url(route('deleteParcelas',$record->id_compra)),
-                             
-                                
-                        ])       
-                        ->persistent()
-                        ->send();
-                 }),
+                    ->modalHeading('Confirmar exclusão')
+                    ->after(function ($record) {
+                        $cartao = Cartao::find($record->cartao_id);
+                        $cartao->saldo += $record->valor_parcela;
+                        $cartao->save();
+                        Notification::make()
+                            ->title('Demais parcelas')
+                            ->body('Deseja também excluir todas as parcelas não paga desta compra?')
+                            ->actions([
+                                Action::make('Sim')
+                                    ->button()
+                                    ->color('danger')
+                                    ->url(route('deleteParcelas', $record->id_compra)),
+                                Action::make('Não')
+                                    ->color('gray')
+                                    ->close(),
+
+
+                            ])
+                            ->persistent()
+                            ->send();
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                   // Tables\Actions\DeleteBulkAction::make(),
+                    // Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
     }

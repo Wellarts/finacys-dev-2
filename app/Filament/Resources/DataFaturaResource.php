@@ -140,21 +140,17 @@ class DataFaturaResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Filter::make('fechado')
-                    ->label('Fechadas')
-                    ->toggle()
-                    ->query(fn(Builder $query): Builder => $query->where('fechado', true)),
                 Filter::make('pago')
                     ->label('Pagas')
                     ->toggle()
-                    ->query(fn(Builder $query): Builder => $query->where('pago', true)),
+                    ->query(fn(Builder $query): Builder => $query->where('pago', true))->default(false),
 
                 SelectFilter::make('cartao')->relationship('cartao', 'nome')->searchable(),
                 Tables\Filters\Filter::make('vencimento_fatura')
                     ->form([
                         Forms\Components\DatePicker::make('vencimento_de')
                             ->label('Vencimento de:')
-                            ->default(Carbon::now()->startOfMonth()->addMonths(1)),
+                            ->default(Carbon::now()),
                         Forms\Components\DatePicker::make('vencimento_ate')
                             ->default(Carbon::now()->endOfMonth()->addMonths(1))
                             ->label('Vencimento até:'),

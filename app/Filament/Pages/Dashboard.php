@@ -97,31 +97,59 @@ class Dashboard extends \Filament\Pages\Dashboard
         $cartoes = Cartao::all();
 
         foreach ($cartoes as $cartao) {
-            if ($cartao->fechamento_fatura == Carbon::now()->format('d')) {
-                
-                for ($cont = 0; $cont <= Fatura::where('cartao_id', $cartao->id)->count(); $cont++) {
-                    $valorTotalFatura = Fatura::where('cartao_id', $cartao->id)->sum('valor_parcela');
+            //lançamentos do próximo vencimento
+
+            //    // $cartao = Cartao::where('id', $cartao->id)->first();
+            //     $vencimentoFatura = $cartao->vencimento_fatura;
+            //     $fechamentoFatura = $cartao->fechamento_fatura;
+            //     $dataVencimento = Carbon::createFromFormat('d/m/Y', $vencimentoFatura . '/' . Carbon::now()->format('m/Y'));
+            //     $dataFechamento = Carbon::createFromFormat('d/m/Y', $fechamentoFatura . '/' . Carbon::now()->format('m/Y'));
+
+            //     if ($dataFechamento <= Carbon::now()) {
+            //         if ($vencimentoFatura < $fechamentoFatura) {
+            //             $dataVencimento->addMonths(2);
+            //         } else {
+            //             $dataVencimento->addMonths(1);
+            //         }
+            //     }
+
+            //     $dataVencimento->format('Y-m-d');
+
+            if ($cartao->fechamento_fatura <= Carbon::now()->format('d')) {
+                //   dd($cartao->fechamento_fatura);
+                if (Fatura::where('cartao_id', $cartao->id)->count() != 0) {
+
+                    //  $valorTotalFatura = Fatura::where('cartao_id', $cartao->id)->sum('valor_parcela');
+                    $lancamentosCartao = Fatura::where('cartao_id', $cartao->id)
+                        ->where('pago', 0)
+                        ->where('created_at', '<', Carbon::now()->toDateTimeString())
+                        ->get();
+                      //  ->sum('valor_parcela');
+
+                     //   dd($valorTotalFatura);
+                  //  dd($lancamentosCartao);
+                    $fechamentoFatura = [
+
+                        'cartao_id' => $cartao->id,
+                        'valor_fatura' => $lancamentosCartao->sum('valor_parcela'),
+                        'vencimento_fatura' => $lancamentosCartao->first()->data_vencimento,
+                        'pago' => false,
+                        'valor_pago' => 0,
+                        'team_id' => $cartao->team_id,
+                    ];
+
+
+                    if (!DataFatura::where('cartao_id', $cartao->id)->where('valor_fatura',$lancamentosCartao->sum('valor_parcela'))->where('vencimento_fatura', $lancamentosCartao->first()->data_vencimento)->exists()) {
+                        DataFatura::create($fechamentoFatura);
+
+                        Notification::make()
+                            ->title('ATENÇÃO: Fechamento de Fatura')
+                            ->body('A fatura do cartão: ' . $cartao->nome . ' está fechada.')
+                            ->danger()
+                            ->persistent()
+                            ->send();
+                    }
                 }
-                $fechamentoFatura = [
-                    'cartao_id' => $cartao->id,
-                    'valor_fatura' => $valorTotalFatura,
-                    'vencimento_fatura' => Fatura::where('cartao_id', $cartao->id)->first()->data_vencimento,
-                    'pago' => false,
-                    'valor_pago' => 0,
-                    'team_id' => $cartao->team_id,
-                ];
-
-             
-            if (!DataFatura::where('cartao_id', $cartao->id)->where('valor_fatura', $valorTotalFatura)->where('vencimento_fatura', Fatura::where('cartao_id', $cartao->id)->first()->data_vencimento)->exists()) {
-                DataFatura::create($fechamentoFatura);
-
-                Notification::make()
-                    ->title('ATENÇÃO: Fechamento de Fatura')
-                    ->body('A fatura do cartão: ' . $cartao->nome . ' está fechada.')
-                    ->danger()
-                    ->persistent()
-                    ->send();
-            }
             }
         }
     }
