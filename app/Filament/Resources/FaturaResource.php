@@ -525,12 +525,13 @@ class FaturaResource extends Resource
     {
         return $table
             ->defaultSort('data_vencimento', 'asc')
-            ->defaultGroup('cartao.nome', 'Cartão')
+            ->defaultGroup('data_vencimento', 'Fatura')           
+            
+
             ->groups([
-                Group::make('cartao.nome')
-                    ->label('Cartão')
-
-
+                Group::make('data_vencimento')
+                    ->date('d/m/Y')
+                    ->label('Vencimento')
 
             ])
             ->columns([
