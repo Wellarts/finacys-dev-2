@@ -28,6 +28,8 @@ use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Grouping\Group;
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Filters\TernaryFilter;
 
 
 class FaturaResource extends Resource
@@ -647,16 +649,24 @@ class FaturaResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Filter::make('apagar')
-                    ->label('A Pagar')
-                    ->toggle()
-                    ->query(fn(Builder $query): Builder => $query->where('pago', false))->default(true),
-                Filter::make('pagas')
-                    ->label('Pagas')
-                    ->toggle()
-                    ->query(fn(Builder $query): Builder => $query->where('pago', true)),
+                // Filter::make('apagar')
+                //     ->label('A Pagar')
+                    
+                //     ->toggle()
+                //     ->query(fn(Builder $query): Builder => $query->where('pago', false))->default(true),
+                // Filter::make('pagas')
+                //     ->label('Pagas')
+                //     ->toggle()
+                //     ->query(fn(Builder $query): Builder => $query->where('pago', true)),
+                TernaryFilter::make('pago')
+                    ->label('Pago')
+                    ->default(false),                  
+                    
 
-                SelectFilter::make('cartao')->relationship('cartao', 'nome')->searchable(),
+                SelectFilter::make('cartao')->relationship('cartao', 'nome')
+                    ->searchable()
+                    ->default(Config::first()->cartao_id)
+                    ->label('Cartão'),
                 SelectFilter::make('categoria')->relationship('categoria', 'nome')->searchable(),
                 SelectFilter::make('subCategoria')->relationship('subCategoria', 'nome')->searchable()
                     ->label('SubCategoria'),
@@ -664,11 +674,12 @@ class FaturaResource extends Resource
                     ->form([
                         Forms\Components\DatePicker::make('vencimento_de')
                             ->label('Vencimento de:')
-                            ->default(Carbon::now()),
+                            ->default(Carbon::now()->startOfMonth()),
                         Forms\Components\DatePicker::make('vencimento_ate')
                             ->default(Carbon::now()->endOfMonth()->addMonths(1))
                             ->label('Vencimento até:'),
                     ])
+                    
 
                     ->query(function ($query, array $data) {
                         return $query
@@ -681,7 +692,7 @@ class FaturaResource extends Resource
                                 fn($query) => $query->whereDate('data_vencimento', '<=', $data['vencimento_ate'])
                             );
                     })
-            ])
+                ], layout: FiltersLayout::AboveContent)->filtersFormColumns(5)
 
             ->actions([
                 Tables\Actions\EditAction::make(),
