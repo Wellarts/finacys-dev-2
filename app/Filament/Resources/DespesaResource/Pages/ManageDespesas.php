@@ -40,6 +40,7 @@ class ManageDespesas extends ManageRecords
                                 'pago' => $record->pago,
                                 'anexo' => $record->anexo,
                                 'team_id' => $record->team_id,
+                                'id_despesa' => $record->id_despesa,
                             ];
                             Despesa::create($parcelas);
                         }

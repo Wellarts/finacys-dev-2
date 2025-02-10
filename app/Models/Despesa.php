@@ -27,6 +27,7 @@ class Despesa extends Model
         'ordem_parcela',
         'valor_parcela',
         'team_id',
+        'id_despesa',
 
     ];
 

@@ -60,11 +60,15 @@ class FaturaResource extends Resource
                             ->schema([
 
                                 Forms\Components\Hidden::make('id_compra')
-                                    ->default(rand(1000000000, 9999999999)),
+                                    ->default(function () {
+                                        $lastRecord = Fatura::latest('id')->first();
+                                        return $lastRecord ? $lastRecord->id_compra + 1 : 1000000000;
+                                    }),
 
                                 Forms\Components\TextInput::make('valor_total')
                                     ->label('Valor Total')
                                     ->required()
+                                    ->hidden(fn($context) => $context == 'edit')
                                     ->autofocus()
                                     ->numeric()
                                     ->prefix('R$')
@@ -82,6 +86,7 @@ class FaturaResource extends Resource
                                 Forms\Components\Select::make('cartao_id')
                                     ->label('Cartão')
                                     ->required()
+                                    ->hidden(fn($context) => $context == 'edit')
                                     ->default(Config::first()->cartao_id)
                                     ->searchable()
                                     ->live(onBlur: true)
@@ -105,25 +110,6 @@ class FaturaResource extends Resource
 
                                             $set('data_fatura', 'Fatura: ' . $dataVencimento->format('d/m/Y') . ' - ' . $cartao->nome);
                                             $set('data_vencimento', $dataVencimento->format('Y-m-d'));
-                                            ############################################
-                                            // $set('data_vencimento', function ($state) {
-                                            //     $cartao = Cartao::where('id', $state)->first();
-                                            //     $vencimentoFatura = $cartao->vencimento_fatura;
-                                            //     $fechamentoFatura = $cartao->fechamento_fatura;
-                                            //     $dataVencimento = Carbon::createFromFormat('d/m/Y', $vencimentoFatura . '/' . Carbon::now()->format('m/Y'));
-                                            //     $dataFechamento = Carbon::createFromFormat('d/m/Y', $fechamentoFatura . '/' . Carbon::now()->format('m/Y'));
-
-
-                                            //     if ($dataFechamento <= Carbon::now()) {
-                                            //         if ($vencimentoFatura < $fechamentoFatura) {
-                                            //             return  $dataVencimento->addMonths(2);
-                                            //         } else {
-                                            //             $dataVencimento->addMonths(1);
-                                            //         }
-                                            //     }
-
-                                            //     return $dataVencimento->format('Y-m-d');
-                                            // });
                                         }
                                     })
                                     ->preload()
@@ -349,6 +335,7 @@ class FaturaResource extends Resource
                                     ]),
                                 Forms\Components\ToggleButtons::make('pago')
                                     ->label('Pago?')
+                                    ->hidden(fn($context) => $context == 'edit')
                                     //   ->extraInputAttributes(['tabindex' => 6])
                                     ->live()
                                     ->default(false)
@@ -362,6 +349,7 @@ class FaturaResource extends Resource
                                     ->boolean()
                                     ->grouped(),
                                 Forms\Components\DatePicker::make('data_vencimento')
+                                    ->hidden(fn($context) => $context == 'edit')
                                     ->default(function (Get $get) {
                                         $cartao = Cartao::where('id', $get('cartao_id'))->first();
                                         $vencimentoFatura = $cartao->vencimento_fatura;
@@ -385,6 +373,7 @@ class FaturaResource extends Resource
                                     ->label('Data Vencimento')
                                     ->required(),
                                 Forms\Components\DatePicker::make('data_pagamento')
+                                    ->hidden(fn($context) => $context == 'edit')
                                     ->displayFormat('d/m/Y')
                                     //   ->extraInputAttributes(['tabindex' => 8])
                                     ->live()
@@ -416,6 +405,7 @@ class FaturaResource extends Resource
                                 //         modifyQueryUsing: fn(Builder $query, Get $get) => $query->where('cartao_id', $get('cartao_id'))->whereBelongsTo(Filament::getTenant()),
                                 //     ),
                                 Forms\Components\TextInput::make('data_fatura')
+                                    ->hidden(fn($context) => $context == 'edit')
                                     ->columnSpan([
                                         'xl' => 2,
                                         '2xl' => 2,
@@ -441,6 +431,14 @@ class FaturaResource extends Resource
                                         return 'Fatura: ' . $dataVencimento->format('d/m/Y') . ' - ' . $cartao->nome;
                                     })
                                     ->label('Data Fatura'),
+                                Forms\Components\Radio::make('editar')
+                                    ->hidden(fn($context) => $context == 'create')
+                                    ->required(fn($context) => $context == 'edit')
+                                    ->label('Deseja editar?')
+                                    ->options([
+                                        '1' => 'Apenas esta',
+                                        '2' => 'Todas as parcelas abertas',
+                                    ])
 
                             ]),
 
@@ -452,6 +450,7 @@ class FaturaResource extends Resource
                             ])
                             ->schema([
                                 Forms\Components\ToggleButtons::make('parcelado')
+                                    ->hidden(fn($context) => $context == 'edit')
                                     ->label('Parcelado?')
                                     ->default(false)
                                     ->boolean()
@@ -467,8 +466,7 @@ class FaturaResource extends Resource
                                     ->grouped(),
                                 Forms\Components\Select::make('forma_parcelamento')
                                     ->label('Parcelamento')
-                                    //   ->extraInputAttributes(['tabindex' => 10])
-                                    ->hidden(fn(Get $get): bool => ($get('parcelado') == false))
+                                    ->hidden(fn(Get $get): bool => ($get('parcelado') == false or fn($context) => $context == 'edit'))
                                     ->default(30)
                                     ->options([
                                         '7' => 'Semanal',
@@ -478,9 +476,10 @@ class FaturaResource extends Resource
                                         '360' => 'Anual',
                                     ]),
                                 Forms\Components\TextInput::make('qtd_parcela')
+                                    ->hidden(fn($context) => $context == 'edit')
                                     ->label('Qtd Parcelas')
                                     //   ->extraInputAttributes(['tabindex' => 9])
-                                    ->hidden(fn(Get $get): bool => ($get('parcelado') == false))
+                                    ->hidden(fn(Get $get): bool => ($get('parcelado') == false or fn($context) => $context == 'edit'))
                                     ->required(fn(Get $get): bool => ($get('parcelado') == true))
                                     ->live(onBlur: true)
                                     ->afterStateUpdated(function ($state, callable $set, Get $get) {
@@ -516,6 +515,7 @@ class FaturaResource extends Resource
                                     ->label('Anexo')
                                     ->multiple()
                                     ->downloadable(),
+
                             ]),
                     ]),
 
@@ -527,8 +527,8 @@ class FaturaResource extends Resource
     {
         return $table
             ->defaultSort('data_vencimento', 'asc')
-            ->defaultGroup('data_vencimento', 'Fatura')           
-            
+            ->defaultGroup('data_vencimento', 'Fatura')
+
 
             ->groups([
                 Group::make('data_vencimento')
@@ -554,13 +554,7 @@ class FaturaResource extends Resource
                             return 'Sim';
                         }
                     }),
-                // Tables\Columns\TextColumn::make('valor_total')
-                //     ->label('Valor Total')
-                //     ->money('BRL'),
-                // Tables\Columns\TextColumn::make('qtd_parcela')
-                //     ->alignCenter()
-                //     ->label('Qtd Parcelas')
-                //     ->numeric(),
+                
                 Tables\Columns\TextColumn::make('ordem_parcela')
                     ->summarize(Count::make()->label('Qtd Parcelas'))
                     ->alignCenter()
@@ -649,19 +643,11 @@ class FaturaResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                // Filter::make('apagar')
-                //     ->label('A Pagar')
-                    
-                //     ->toggle()
-                //     ->query(fn(Builder $query): Builder => $query->where('pago', false))->default(true),
-                // Filter::make('pagas')
-                //     ->label('Pagas')
-                //     ->toggle()
-                //     ->query(fn(Builder $query): Builder => $query->where('pago', true)),
+                
                 TernaryFilter::make('pago')
                     ->label('Pago')
-                    ->default(false),                  
-                    
+                    ->default(false),
+
 
                 SelectFilter::make('cartao')->relationship('cartao', 'nome')
                     ->searchable()
@@ -679,7 +665,7 @@ class FaturaResource extends Resource
                             ->default(Carbon::now()->endOfMonth()->addMonths(1))
                             ->label('Vencimento até:'),
                     ])
-                    
+
 
                     ->query(function ($query, array $data) {
                         return $query
@@ -692,10 +678,33 @@ class FaturaResource extends Resource
                                 fn($query) => $query->whereDate('data_vencimento', '<=', $data['vencimento_ate'])
                             );
                     })
-                ], layout: FiltersLayout::AboveContent)->filtersFormColumns(5)
+            ], layout: FiltersLayout::AboveContent)->filtersFormColumns(5)
 
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->after(function ($record, $data) {
+                        if ($data['editar'] == 2) {
+                            $faturas = Fatura::where('id_compra', $record->id_compra)->get();
+                            foreach ($faturas as $fatura) {
+                                $fatura->descricao = $record->descricao;
+                                $fatura->categoria_id = $record->categoria_id;
+                                $fatura->sub_categoria_id = $record->sub_categoria_id;
+                                $fatura->ignorado = $record->ignorado;
+                                $fatura->valor_parcela = $record->valor_parcela;
+                                $fatura->anexo = $record->anexo;
+                                $fatura->save();
+                            }
+                            Notification::make()
+                                ->title('Todas as parcelas foram alteradas!')
+                                ->success()
+                                ->send();
+                        } else {
+                            Notification::make()
+                                ->title('Parcela alterada com sucesso!')
+                                ->success()
+                                ->send();
+                        }
+                    }),
                 Tables\Actions\DeleteAction::make()
                     ->modalHeading('Confirmar exclusão')
                     ->after(function ($record) {

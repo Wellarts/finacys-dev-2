@@ -19,3 +19,4 @@ Route::get('/', function () {
 });
 //Route::get('novaParcela/{id}',[ControllerNovaParcela::class, 'novaParcela'])->name('novaParcela');
 Route::get('deleteParcelas/{idCompra}',[DeleteParcelasController::class, 'deleteParcelas'])->name('deleteParcelas');
+Route::get('deleteDespesas/{idDespesa}',[DeleteParcelasController::class, 'deleteDespesas'])->name('deleteDespesas');

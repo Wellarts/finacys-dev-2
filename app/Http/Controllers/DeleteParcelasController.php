@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Cartao;
+use App\Models\Conta;
+use App\Models\Despesa;
 use App\Models\Fatura;
 use Filament\Notifications\Notification;
 use Illuminate\Http\Request;
@@ -22,6 +24,29 @@ class DeleteParcelasController extends Controller
             
             // delete as parcelas
             $fatura->delete();
+
+        }
+        Notification::make()
+            ->title('Parcelas excluídas com sucesso!')
+            ->success()
+            ->send();
+
+        return back();
+    }
+
+    function deleteDespesas($idDespesa)
+    {
+
+        $despesas = Despesa::where('id_despesa', $idDespesa)->get();
+        foreach ($despesas as $despesa) {
+            
+            // ajusta limite do cartão
+            $conta = Conta::find($despesa->conta_id);
+            $conta->saldo += $despesa->valor_parcela;
+            $conta->save();
+            
+            // delete as parcelas
+            $despesa->delete();
 
         }
         Notification::make()

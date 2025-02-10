@@ -23,6 +23,8 @@ use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use App\Models\Config;
+use Filament\Notifications\Notification;
+use Filament\Notifications\Actions\Action;
 
 class DespesaResource extends Resource
 {
@@ -52,6 +54,13 @@ class DespesaResource extends Resource
 
                                 Forms\Components\TextInput::make('valor_total')
                                     ->label('Valor Total')
+                                    ->hidden(fn($context, Get $get) => $context == 'edit' && $get('parcelado') == true)
+                                    ->live()
+                                    ->afterStateUpdated(function ($state, callable $set) {
+                                        if ($state != null) {
+                                            $set('valor_parcela', $state);
+                                        }
+                                    })
                                     ->autofocus()
                                     ->numeric()
                                     ->prefix('R$')
@@ -66,6 +75,13 @@ class DespesaResource extends Resource
                                     ])
 
                                     ->required(),
+                                Forms\Components\Hidden::make('id_despesa')
+                                    // ->hidden()
+                                    ->default(function () {
+                                        $lastRecord = Despesa::latest('id')->first();
+                                        return $lastRecord ? $lastRecord->id_despesa + 1 : 1000000000;
+                                    }),
+
                                 Forms\Components\Select::make('conta_id')
                                     ->label('Conta')
                                     ->required()
@@ -83,7 +99,10 @@ class DespesaResource extends Resource
                                             '2xl' => 4,
                                         ])->schema([
                                             Forms\Components\Select::make('banco_id')
-                                                ->columnspan(2)
+                                                ->columnSpan([
+                                                    'xl' => 2,
+                                                    '2xl' => 2,
+                                                ])
                                                 ->label('Banco')
                                                 ->searchable()
                                                 ->live()
@@ -97,7 +116,10 @@ class DespesaResource extends Resource
 
                                                 ->relationship('banco', 'nome'),
                                             Forms\Components\TextInput::make('descricao')
-                                                ->columnspan(2)
+                                                ->columnSpan([
+                                                    'xl' => 2,
+                                                    '2xl' => 2,
+                                                ])
                                                 ->hint('Dê um nome susgestivo para sua conta!')
                                                 ->label('Descrição'),
                                             Forms\Components\Radio::make('tipo')
@@ -171,7 +193,6 @@ class DespesaResource extends Resource
                                     ]),
                                 Forms\Components\ToggleButtons::make('pago')
                                     ->label('Pago?')
-                                    //   ->extraInputAttributes(['tabindex' => 6])
                                     ->live()
                                     ->default(true)
                                     ->afterStateUpdated(function ($state, callable $set) {
@@ -185,14 +206,12 @@ class DespesaResource extends Resource
                                     ->grouped(),
                                 Forms\Components\DatePicker::make('data_vencimento')
                                     ->default(Carbon::now())
-                                    //   ->extraInputAttributes(['tabindex' => 7])
                                     ->required()
                                     ->displayFormat('d/m/Y')
                                     ->label('Data Vencimento')
                                     ->required(),
                                 Forms\Components\DatePicker::make('data_pagamento')
                                     ->displayFormat('d/m/Y')
-                                    //   ->extraInputAttributes(['tabindex' => 8])
                                     ->default(Carbon::now())
                                     ->label('Data Pagamento')
                                     ->required(fn(Get $get): bool => ($get('pago') == true)),
@@ -202,6 +221,14 @@ class DespesaResource extends Resource
                                         '2xl' => 2,
                                     ])
                                     ->helperText('Não será aplicado nos totais de despesas'),
+                                Forms\Components\Radio::make('editar')
+                                    ->hidden(fn($context, $record) => $context == 'create' or $record->parcelado == false)
+                                    ->required(fn($context) => $context == 'edit')
+                                    ->label('Deseja editar?')
+                                    ->options([
+                                        '1' => 'Apenas esta',
+                                        '2' => 'Todas as parcelas abertas',
+                                    ]),
 
                             ]),
 
@@ -214,6 +241,7 @@ class DespesaResource extends Resource
                             ->schema([
                                 Forms\Components\ToggleButtons::make('parcelado')
                                     ->label('Parcelado?')
+                                    ->hidden(fn($context) => $context == 'edit')
                                     ->default(false)
                                     ->boolean()
                                     ->live()
@@ -228,8 +256,8 @@ class DespesaResource extends Resource
                                     ->grouped(),
                                 Forms\Components\Select::make('forma_parcelamento')
                                     ->label('Parcelamento')
-                                    //   ->extraInputAttributes(['tabindex' => 10])
-                                    ->hidden(fn(Get $get): bool => ($get('parcelado') == false))
+                                    ->hidden(fn($context) => $context == 'edit')
+                                    ->hidden(fn(Get $get, $context): bool => ($get('parcelado') == false or $context == 'edit'))
                                     ->default(30)
                                     ->options([
                                         '7' => 'Semanal',
@@ -240,8 +268,7 @@ class DespesaResource extends Resource
                                     ]),
                                 Forms\Components\TextInput::make('qtd_parcela')
                                     ->label('Qtd Parcelas')
-                                    //   ->extraInputAttributes(['tabindex' => 9])
-                                    ->hidden(fn(Get $get): bool => ($get('parcelado') == false))
+                                    ->hidden(fn(Get $get, $context): bool => ($get('parcelado') == false or $context == 'edit'))
                                     ->required(fn(Get $get): bool => ($get('parcelado') == true))
                                     ->live(onBlur: true)
                                     ->afterStateUpdated(function ($state, callable $set, Get $get) {
@@ -262,7 +289,7 @@ class DespesaResource extends Resource
                                 Forms\Components\TextInput::make('valor_parcela')
                                     ->label('Valor Parcela')
                                     //  ->extraInputAttributes(['tabindex' => 12])
-                                    ->hidden(fn(Get $get): bool => ($get('parcelado') == false))
+                                    //  ->hidden(fn(Get $get): bool => ($get('parcelado') == false))
                                     ->required(fn(Get $get): bool => ($get('parcelado') == true))
                                     ->prefix('R$')
                                     ->inputMode('decimal')
@@ -420,18 +447,75 @@ class DespesaResource extends Resource
             ->filtersFormColumns(1)
             ->actions([
                 Tables\Actions\EditAction::make()
+                    ->before(function ($record){
+                        if ($record->pago == true) {
+                            $saldoConta = Conta::find($record->conta_id);
+                            $saldoConta->saldo = $saldoConta->saldo + $record->valor_parcela;
+                            $saldoConta->save();
+                        }
+                    })
+                    ->after(function ($record, $data) {
+                        if ($record->pago == true) {                        
+                            $conta = Conta::find($record->conta_id);                           
+                            $conta->saldo -= $record->valor_parcela;
+                            $conta->save();
+                        }
+
+
+                        if ($data['editar'] == 2) {
+                            $despesas = Despesa::where('id_despesa', $record->id_despesa)->get();
+                            foreach ($despesas as $despesa) {
+                                $despesa->descricao = $record->descricao;
+                                $despesa->conta_id = $record->conta_id;
+                                $despesa->data_vencimento = $record->data_vencimento;
+                                $despesa->data_pagamento = $record->data_pagamento;
+                                $despesa->categoria_id = $record->categoria_id;
+                                $despesa->sub_categoria_id = $record->sub_categoria_id;
+                                $despesa->ignorado = $record->ignorado;
+                                $despesa->valor_parcela = $record->valor_parcela;
+                                $despesa->anexo = $record->anexo;
+                                $despesa->save();
+                            }
+                            Notification::make()
+                                ->title('Todas as parcelas foram alteradas!')
+                                ->success()
+                                ->send();
+                        } else {
+                            Notification::make()
+                                ->title('Parcela alterada com sucesso!')
+                                ->success()
+                                ->send();
+                        }
+                    }),
+                Tables\Actions\DeleteAction::make()
+                    ->modalHeading('Confirmar exclusão')
                     ->after(function ($record) {
                         if ($record->pago == true) {
                             $saldoConta = Conta::find($record->conta_id);
-                            $saldoConta->saldo = $saldoConta->saldo - $record->valor_parcela;
+                            $saldoConta->saldo += $record->valor_parcela;
                             $saldoConta->save();
                         }
+                        Notification::make()
+                            ->title('Demais parcelas')
+                            ->body('Deseja também excluir todas as parcelas não paga desta despesa?')
+                            ->actions([
+                                Action::make('Sim')
+                                    ->button()
+                                    ->color('danger')
+                                    ->url(route('deleteDespesas', $record->id_despesa)),
+                                Action::make('Não')
+                                    ->color('gray')
+                                    ->close(),
+
+
+                            ])
+                            ->persistent()
+                            ->send();
                     }),
-                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    //   Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
     }
